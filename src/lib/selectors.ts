@@ -1,8 +1,18 @@
 import { getPipeline } from '../data/pipelines'
 import { STAGE_STATUS_STEPS } from '../types/idea'
-import type { Idea } from '../types/idea'
+import type { Idea, StageStatus } from '../types/idea'
 import type { Pipeline, Stage } from '../types/pipeline'
 import { TOOL_STAGE_IDS } from '../types/pipeline'
+
+/** True for 'research' and the 4 article "tool" stages: stages tracked via
+ * the 4-state StatusTracker instead of a checklist. */
+export function isStatusTrackedStage(stageId: string): boolean {
+  return stageId === 'research' || (TOOL_STAGE_IDS as readonly string[]).includes(stageId)
+}
+
+export function stageStatusOf(idea: Idea, stageId: string): StageStatus {
+  return stageId === 'research' ? idea.research.status : idea.stageStatus[stageId] ?? 'todo'
+}
 
 /* Ported from legacy/index.html's helpers (lines 1362-1372), adapted to the
  * typed/eager Idea model (no positional `checks` array - checklistState is

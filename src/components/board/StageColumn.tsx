@@ -1,7 +1,7 @@
 import { useDroppable } from '@dnd-kit/core'
 import { IdeaCard } from './IdeaCard'
 import type { Idea } from '../../types/idea'
-import type { Pipeline, Stage } from '../../types/pipeline'
+import type { Pipeline, PipelineId, Stage } from '../../types/pipeline'
 
 interface StageColumnProps {
   pipeline: Pipeline
@@ -10,7 +10,7 @@ interface StageColumnProps {
   ideas: Idea[]
   onOpenIdea?: (id: string) => void
   onArchiveIdea?: (id: string) => void
-  onOpenStageGuide?: (pipelineId: string, stageIndex: number) => void
+  onOpenStageGuide?: (pipelineId: PipelineId, stageIndex: number) => void
 }
 
 export function StageColumn({ pipeline, stage, stageIndex, ideas, onOpenIdea, onArchiveIdea, onOpenStageGuide }: StageColumnProps) {

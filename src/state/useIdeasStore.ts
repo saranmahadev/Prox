@@ -19,6 +19,7 @@ interface IdeasState {
   setStageStatus: (ideaId: string, stageId: string, status: StageStatus) => void
   advanceStage: (ideaId: string) => void
   goToStage: (ideaId: string, stageIndex: number) => void
+  goBackStage: (ideaId: string) => void
 
   archiveIdea: (id: string) => void
   restoreIdea: (id: string) => void
@@ -91,7 +92,9 @@ export const useIdeasStore = create<IdeasState>()(
             checklistState: { ...idea.checklistState, [stage.id]: items.map((it) => ({ ...it, checked: true })) },
           })
         }
-        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, stage: i.stage + 1 } : i)) }))
+        set((s) => ({
+          ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, stage: i.stage + 1, archived: false, archivedAt: null } : i)),
+        }))
       },
 
       goToStage: (ideaId, stageIndex) => {
@@ -99,7 +102,17 @@ export const useIdeasStore = create<IdeasState>()(
         if (!idea) return
         const maxStage = pipeOf(idea).stages.length - 1
         const clamped = Math.max(0, Math.min(stageIndex, maxStage))
-        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, stage: clamped } : i)) }))
+        set((s) => ({
+          ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, stage: clamped, archived: false, archivedAt: null } : i)),
+        }))
+      },
+
+      goBackStage: (ideaId) => {
+        const idea = get().ideas.find((i) => i.id === ideaId)
+        if (!idea || idea.stage <= 0) return
+        set((s) => ({
+          ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, stage: i.stage - 1, archived: false, archivedAt: null } : i)),
+        }))
       },
 
       archiveIdea: (id) => {

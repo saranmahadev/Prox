@@ -1,7 +1,12 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import type { PipelineId } from '../types/pipeline'
 
 export type Theme = 'light' | 'dark' | null
+
+export type DrawerState =
+  | { mode: 'idea'; ideaId: string }
+  | { mode: 'guide'; pipelineId: PipelineId; stageIndex: number }
 
 interface UiState {
   theme: Theme
@@ -11,6 +16,12 @@ interface UiState {
   toastMessage: string | null
   toastVisible: boolean
   showToast: (message: string) => void
+
+  drawer: DrawerState | null
+  openIdea: (ideaId: string) => void
+  openGuide: (pipelineId: PipelineId, stageIndex: number) => void
+  closeDrawer: () => void
+  setGuideStageIndex: (stageIndex: number) => void
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined
@@ -48,6 +59,13 @@ export const useUiStore = create<UiState>()(
         clearTimeout(toastTimer)
         toastTimer = setTimeout(() => set({ toastVisible: false }), 2400)
       },
+
+      drawer: null,
+      openIdea: (ideaId) => set({ drawer: { mode: 'idea', ideaId } }),
+      openGuide: (pipelineId, stageIndex) => set({ drawer: { mode: 'guide', pipelineId, stageIndex } }),
+      closeDrawer: () => set({ drawer: null }),
+      setGuideStageIndex: (stageIndex) =>
+        set((s) => (s.drawer?.mode === 'guide' ? { drawer: { ...s.drawer, stageIndex } } : {})),
     }),
     {
       name: 'prox-ui-v1',

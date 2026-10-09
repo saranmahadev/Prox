@@ -5,7 +5,7 @@ import { ProgressRing } from '../ui'
 import { StageColumn } from './StageColumn'
 import { ArchiveFolderWidget } from './ArchiveFolderWidget'
 import type { Idea } from '../../types/idea'
-import type { Pipeline } from '../../types/pipeline'
+import type { Pipeline, PipelineId } from '../../types/pipeline'
 import { PipelineFilterPopover } from './PipelineFilterPopover'
 
 interface PipelineSectionProps {
@@ -15,7 +15,7 @@ interface PipelineSectionProps {
   vertical: boolean
   onOpenIdea?: (id: string) => void
   onArchiveIdea?: (id: string) => void
-  onOpenStageGuide?: (pipelineId: string, stageIndex: number) => void
+  onOpenStageGuide?: (pipelineId: PipelineId, stageIndex: number) => void
   onOpenArchive?: (pipelineId: string) => void
   onCapture?: (pipelineId: string) => void
 }

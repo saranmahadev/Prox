@@ -1,5 +1,6 @@
 import { DndContext } from '@dnd-kit/core'
 import { PIPELINES } from '../../data/pipelines'
+import type { PipelineId } from '../../types/pipeline'
 import { useIdeasStore } from '../../state/useIdeasStore'
 import { useBoardStore } from '../../state/useBoardStore'
 import { archivedIdeas, isDone, liveIdeas } from '../../lib/selectors'
@@ -11,7 +12,7 @@ import { PipelineSection } from './PipelineSection'
 
 interface BoardProps {
   onOpenIdea?: (id: string) => void
-  onOpenStageGuide?: (pipelineId: string, stageIndex: number) => void
+  onOpenStageGuide?: (pipelineId: PipelineId, stageIndex: number) => void
   onOpenArchive?: (pipelineId?: string) => void
   onCapture?: (pipelineId?: string) => void
 }
