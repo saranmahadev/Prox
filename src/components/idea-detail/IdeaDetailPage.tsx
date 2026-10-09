@@ -13,6 +13,8 @@ import { GenericChecklistStageView } from './GenericChecklistStageView'
 import { PublishedStageView } from './PublishedStageView'
 import { ResearchStageView } from './ResearchStageView'
 import { ResearchRecap } from './ResearchRecap'
+import { DraftEditorView } from './DraftEditorView'
+import { OutlineEditorView } from './OutlineEditorView'
 
 interface IdeaDetailPageProps {
   drawer: DrawerState | null
@@ -23,6 +25,7 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
   const closeDrawer = useUiStore((s) => s.closeDrawer)
   const setGuideStageIndex = useUiStore((s) => s.setGuideStageIndex)
   const showToast = useUiStore((s) => s.showToast)
+  const focusMode = useUiStore((s) => s.focusMode)
 
   const ideas = useIdeasStore((s) => s.ideas)
   const setChecklistItem = useIdeasStore((s) => s.setChecklistItem)
@@ -96,7 +99,7 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
   }
 
   return (
-    <DrawerShell open={open} onClose={closeDrawer} ariaLabel="Details">
+    <DrawerShell open={open} onClose={closeDrawer} ariaLabel="Details" focusMode={focusMode}>
       <div style={{ '--c': `var(--${pipeline.color})` } as CSSProperties}>
         <header className="dlg-head">
           <div className="dlg-title">
@@ -143,6 +146,10 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
               <CaptureStageView idea={idea} onEdit={() => onEdit(idea.id)} />
             ) : stage.id === 'research' ? (
               <ResearchStageView idea={idea} />
+            ) : stage.id === 'a-outline' ? (
+              <OutlineEditorView idea={idea} />
+            ) : stage.id === 'a-draft' ? (
+              <DraftEditorView idea={idea} />
             ) : stage.final ? (
               <PublishedStageView idea={idea} pipeline={pipeline} />
             ) : stage.checklist.length > 0 ? (

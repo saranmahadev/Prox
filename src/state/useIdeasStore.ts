@@ -1,12 +1,16 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import type { JSONContent } from '@tiptap/core'
 import { createSeedIdeas, createSeedSeries } from '../data/seed'
 import { createIdea, type NewIdeaInput } from '../lib/ideaFactory'
 import { fileStore, MAX_FILE_SIZE } from '../lib/fileStore'
+import { stripImageUrls } from '../lib/docImages'
 import { uid } from '../lib/id'
-import { localStorageAdapter } from '../lib/storage'
+import { debounced, localStorageAdapter } from '../lib/storage'
 import { isDone, pipeOf, stageOf } from '../lib/selectors'
 import type { Idea, Research, Series, StageStatus } from '../types/idea'
+
+const ideasStorage = debounced(localStorageAdapter)
 
 interface IdeasState {
   ideas: Idea[]
@@ -18,12 +22,17 @@ interface IdeasState {
 
   setChecklistItem: (ideaId: string, stageId: string, itemId: string, checked: boolean) => void
   setStageStatus: (ideaId: string, stageId: string, status: StageStatus) => void
+  /** Bumps a tool stage's status from 'todo' to 'doing' the first time its content is edited. */
+  touchStage: (ideaId: string, stageId: string) => void
   advanceStage: (ideaId: string) => void
   goToStage: (ideaId: string, stageIndex: number) => void
   goBackStage: (ideaId: string) => void
 
   archiveIdea: (id: string) => void
   restoreIdea: (id: string) => void
+
+  updateDraftDoc: (ideaId: string, doc: JSONContent) => void
+  updateOutlineDoc: (ideaId: string, doc: JSONContent) => void
 
   addSourceLink: (ideaId: string, url: string, title: string) => void
   addSourceDoc: (ideaId: string, title: string) => void
@@ -101,6 +110,13 @@ export const useIdeasStore = create<IdeasState>()(
         }))
       },
 
+      touchStage: (ideaId, stageId) => {
+        const idea = get().ideas.find((i) => i.id === ideaId)
+        if (idea && (idea.stageStatus[stageId] ?? 'todo') === 'todo') {
+          get().setStageStatus(ideaId, stageId, 'doing')
+        }
+      },
+
       advanceStage: (ideaId) => {
         const idea = get().ideas.find((i) => i.id === ideaId)
         if (!idea) return
@@ -146,6 +162,17 @@ export const useIdeasStore = create<IdeasState>()(
         set((s) => ({
           ideas: s.ideas.map((i) => (i.id === id ? { ...i, archived: false, archivedAt: null } : i)),
         }))
+      },
+
+      updateDraftDoc: (ideaId, doc) => {
+        const stripped = stripImageUrls(doc)
+        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, doc: stripped } : i)) }))
+        get().touchStage(ideaId, 'a-draft')
+      },
+
+      updateOutlineDoc: (ideaId, doc) => {
+        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, doc } : i)) }))
+        get().touchStage(ideaId, 'a-outline')
       },
 
       addSourceLink: (ideaId, url, title) => {
@@ -247,7 +274,7 @@ export const useIdeasStore = create<IdeasState>()(
     }),
     {
       name: 'prox-ideas-v1',
-      storage: createJSONStorage(() => localStorageAdapter),
+      storage: createJSONStorage(() => ideasStorage),
     },
   ),
 )

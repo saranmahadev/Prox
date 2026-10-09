@@ -1,0 +1,175 @@
+/* Draft editor styles, ported from legacy/index.html. The Editor.js-plugin
+   specific rules (.ce-*, .cdx-*, .tc-*, .image-tool__*) are dropped - Tiptap
+   renders plain semantic HTML, so the shared .ed-preview typography block
+   below is reused directly on the live editor root (see DraftEditorView). */
+
+.ed-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+.ed-bar .btn {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.84rem;
+}
+.ed-sp {
+  flex: 1;
+}
+.ed-words,
+.ed-saved {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.ed-saved::before {
+  content: '●';
+  color: var(--accent);
+  margin-right: 5px;
+  font-size: 0.7em;
+}
+.ed-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 0 140px;
+}
+.ed-title,
+.ed-sub {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  padding: 0;
+  min-height: 0;
+  font-family: var(--serif);
+  color: var(--text);
+}
+.ed-title {
+  font-size: 2.7rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 6px 0 10px;
+}
+.ed-sub {
+  font-size: 1.4rem;
+  line-height: 1.4;
+  color: var(--muted);
+  margin: 0 0 26px;
+}
+.ed-title:focus,
+.ed-sub:focus {
+  outline: 0;
+}
+.ed-title::placeholder,
+.ed-sub::placeholder {
+  color: var(--border2);
+}
+.ed-holder {
+  padding-bottom: 160px;
+}
+.ed-holder .tiptap {
+  outline: 0;
+}
+
+/* Preview + live-editor typography, ported from legacy's .ed-preview block
+   (lines 548-558). Plain tag selectors, so the same rules work for both
+   the Tiptap editing surface and the read-only preview/published body. */
+.ed-preview {
+  font-family: var(--serif);
+  font-size: 1.28rem;
+  line-height: 1.7;
+}
+.ed-preview h1,
+.ed-preview h2,
+.ed-preview h3,
+.ed-preview h4,
+.ed-preview h5,
+.ed-preview h6 {
+  font-family: var(--serif);
+  line-height: 1.25;
+  margin: 1.4em 0 0.4em;
+  letter-spacing: -0.015em;
+}
+.ed-preview h1 {
+  font-size: 2.3rem;
+}
+.ed-preview h2 {
+  font-size: 1.85rem;
+}
+.ed-preview h3 {
+  font-size: 1.5rem;
+}
+.ed-preview h4 {
+  font-size: 1.25rem;
+}
+.ed-preview h5 {
+  font-size: 1.1rem;
+}
+.ed-preview h6 {
+  font-size: 1rem;
+  color: var(--muted);
+}
+.ed-preview p {
+  margin: 0.8em 0;
+}
+.ed-preview blockquote {
+  margin: 1.2em 0;
+  padding-left: 20px;
+  border-left: 3px solid var(--text);
+  font-style: italic;
+  font-size: 1.4rem;
+}
+.ed-preview blockquote p {
+  margin: 0;
+}
+.ed-preview cite {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-style: normal;
+}
+.ed-preview pre {
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--surface2);
+  overflow: auto;
+  font-size: 0.9rem;
+}
+.ed-preview hr {
+  border: 0;
+  text-align: center;
+  margin: 2em 0;
+}
+.ed-preview hr::before {
+  content: '* * *';
+  color: var(--muted);
+  letter-spacing: 0.5em;
+}
+.ed-preview img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.ed-preview figure {
+  margin: 1.4em 0;
+}
+.ed-preview figcaption {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.ed-preview table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.ed-preview td,
+.ed-preview th {
+  border: 1px solid var(--border2);
+  padding: 8px 10px;
+  text-align: left;
+}
+.ed-preview a {
+  color: var(--accent);
+}

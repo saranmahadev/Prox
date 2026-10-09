@@ -1,0 +1,114 @@
+/* Outline editor styles, ported from legacy/index.html. */
+
+.ol-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.ol-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0 5px calc(var(--d, 0) * 28px);
+  border-bottom: 1px solid var(--border);
+}
+.ol-grip {
+  cursor: grab;
+  color: var(--muted);
+  opacity: 0.5;
+  padding: 4px 2px;
+  user-select: none;
+  letter-spacing: -2px;
+}
+.ol-row:hover .ol-grip {
+  opacity: 1;
+}
+.ol-num {
+  flex: none;
+  min-width: 2.6em;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ol-lv {
+  flex: none;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 3px 8px;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  background: var(--surface2);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: center;
+}
+.ol-in {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.ol-in.lv1 {
+  font-size: 1.45rem;
+}
+.ol-in.lv2 {
+  font-size: 1.25rem;
+}
+.ol-in.lv3 {
+  font-size: 1.1rem;
+}
+.ol-in.lv4,
+.ol-in.lv5,
+.ol-in.lv6 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.ol-in.lv5,
+.ol-in.lv6 {
+  color: var(--muted);
+}
+.ol-in:focus {
+  outline: 0;
+  border-color: var(--text);
+}
+.ol-state {
+  flex: none;
+  font-size: 0.74rem;
+  color: var(--muted);
+  min-width: 5.5em;
+  text-align: right;
+}
+.ol-state.ok {
+  color: var(--accent);
+  font-weight: 600;
+}
+.ol-row:hover .rs-x {
+  opacity: 1;
+}
+.ol-ghost {
+  opacity: 0.4;
+}
+.ol-empty {
+  padding: 26px;
+  text-align: center;
+  border: 1px dashed var(--border2);
+  border-radius: 12px;
+  margin-top: 10px;
+}
+.ol-empty p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+#olWrap .rs-stats {
+  margin: 6px 0;
+}
+.rs-stats + .ol-list {
+  margin-top: 6px;
+}

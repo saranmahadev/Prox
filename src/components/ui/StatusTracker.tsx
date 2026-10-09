@@ -6,12 +6,14 @@ interface StatusTrackerProps {
   onChange: (status: StageStatus) => void
   color?: string
   label?: string
+  id?: string
 }
 
-export function StatusTracker({ status, onChange, color, label = 'Status' }: StatusTrackerProps) {
+export function StatusTracker({ status, onChange, color, label = 'Status', id }: StatusTrackerProps) {
   const ix = Math.max(0, STAGE_STATUS_STEPS.findIndex(([k]) => k === status))
   return (
     <ol
+      id={id}
       className="rs-track"
       aria-label={label}
       style={color ? ({ '--c': color } as CSSProperties) : undefined}

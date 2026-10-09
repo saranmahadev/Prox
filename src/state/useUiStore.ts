@@ -22,6 +22,9 @@ interface UiState {
   openGuide: (pipelineId: PipelineId, stageIndex: number) => void
   closeDrawer: () => void
   setGuideStageIndex: (stageIndex: number) => void
+
+  focusMode: boolean
+  toggleFocusMode: () => void
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined
@@ -63,9 +66,12 @@ export const useUiStore = create<UiState>()(
       drawer: null,
       openIdea: (ideaId) => set({ drawer: { mode: 'idea', ideaId } }),
       openGuide: (pipelineId, stageIndex) => set({ drawer: { mode: 'guide', pipelineId, stageIndex } }),
-      closeDrawer: () => set({ drawer: null }),
+      closeDrawer: () => set({ drawer: null, focusMode: false }),
       setGuideStageIndex: (stageIndex) =>
         set((s) => (s.drawer?.mode === 'guide' ? { drawer: { ...s.drawer, stageIndex } } : {})),
+
+      focusMode: false,
+      toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
     }),
     {
       name: 'prox-ui-v1',

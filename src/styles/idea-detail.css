@@ -450,3 +450,32 @@
     gap: 4px;
   }
 }
+
+/* draft editor focus mode */
+aside.drawer.focus .rail,
+aside.drawer.focus .dlg-head,
+aside.drawer.focus .dlg-foot,
+aside.drawer.focus .stage-head,
+aside.drawer.focus .rs-ro,
+aside.drawer.focus #trk,
+aside.drawer.focus .dlg-main > .blk {
+  display: none;
+}
+aside.drawer.focus .dlg-body {
+  grid-template-columns: 1fr;
+}
+aside.drawer.focus .ed-bar {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 5;
+  margin: 0;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+aside.drawer.focus .dlg-main {
+  padding-top: 56px;
+}
