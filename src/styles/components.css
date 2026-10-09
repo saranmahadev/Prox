@@ -9,6 +9,9 @@
   border: 1px solid var(--border);
   border-radius: var(--r);
 }
+.tint {
+  background: var(--surface);
+}
 .well {
   border-radius: 8px;
   background: var(--surface2);

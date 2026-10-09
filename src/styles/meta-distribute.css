@@ -114,6 +114,15 @@
   border-radius: 6px;
   overflow: hidden;
 }
+.c169 {
+  aspect-ratio: 16/9;
+}
+.c191 {
+  aspect-ratio: 1.91/1;
+}
+.c11 {
+  aspect-ratio: 1/1;
+}
 .cr img {
   width: 100%;
   height: 100%;
