@@ -15,7 +15,7 @@ interface ArticleRecapProps {
 export function ArticleRecap({ idea }: ArticleRecapProps) {
   const series = useIdeasStore((s) => s.series)
   const coverUrl = useCoverUrl(idea)
-  const headings = headingRows(idea.doc ?? { type: 'doc', content: [] })
+  const headings = headingRows(idea.doc ?? { blocks: [] })
   const numbering = numberingFor(headings)
   const words = wordCount(idea.doc)
   const cover = hasCover(idea)

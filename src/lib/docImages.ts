@@ -1,25 +1,29 @@
-import type { JSONContent } from '@tiptap/core'
+import type { OutputData } from '@editorjs/editorjs'
 import { fileStore } from './fileStore'
 
-/** Blank out `src` on any image node that has a `fileKey` before persisting -
- * blob: URLs only live for the current session, so storing them would break
- * on reload. Mirrors legacy's commitDoc() (lines 1069-1073). */
-export function stripImageUrls(doc: JSONContent): JSONContent {
-  const walk = (node: JSONContent): JSONContent => {
-    const next = { ...node }
-    if (next.type === 'image' && next.attrs?.fileKey) {
-      next.attrs = { ...next.attrs, src: '' }
-    }
-    if (next.content) next.content = next.content.map(walk)
-    return next
-  }
-  return walk(doc)
+interface ImageFile {
+  key?: string
+  url?: string
 }
 
-/** Resolve `src` for every image node with a `fileKey` from the blob store
- * before mounting the editor. Mirrors legacy's mountDraft() image hydration
- * (lines 1106-1107). */
-export async function hydrateImageUrls(doc: JSONContent): Promise<JSONContent> {
+/** Blank out `url` on any image block that has a `key` before persisting -
+ * blob: URLs only live for the current session, so storing them would break
+ * on reload. Mirrors legacy's commitDoc() (lines 1069-1073). */
+export function stripImageUrls(doc: OutputData): OutputData {
+  return {
+    ...doc,
+    blocks: doc.blocks.map((block) => {
+      const file = block.data?.file as ImageFile | undefined
+      if (block.type !== 'image' || !file?.key) return block
+      return { ...block, data: { ...block.data, file: { ...file, url: '' } } }
+    }),
+  }
+}
+
+/** Resolve `url` for every image block with a `key` from the blob store
+ * before mounting the editor or rendering a preview. Mirrors legacy's
+ * mountDraft() image hydration (lines 1106-1107). */
+export async function hydrateImageUrls(doc: OutputData): Promise<OutputData> {
   const urlCache = new Map<string, string>()
 
   async function resolve(key: string): Promise<string> {
@@ -31,14 +35,12 @@ export async function hydrateImageUrls(doc: JSONContent): Promise<JSONContent> {
     return url
   }
 
-  async function walk(node: JSONContent): Promise<JSONContent> {
-    const next = { ...node }
-    if (next.type === 'image' && next.attrs?.fileKey) {
-      next.attrs = { ...next.attrs, src: await resolve(next.attrs.fileKey) }
-    }
-    if (next.content) next.content = await Promise.all(next.content.map(walk))
-    return next
-  }
-
-  return walk(doc)
+  const blocks = await Promise.all(
+    doc.blocks.map(async (block) => {
+      const file = block.data?.file as ImageFile | undefined
+      if (block.type !== 'image' || !file?.key) return block
+      return { ...block, data: { ...block.data, file: { ...file, url: await resolve(file.key) } } }
+    }),
+  )
+  return { ...doc, blocks }
 }

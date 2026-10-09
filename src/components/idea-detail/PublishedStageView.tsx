@@ -1,8 +1,9 @@
-import { generateHTML } from '@tiptap/core'
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import type { OutputData } from '@editorjs/editorjs'
 import { PRIORITY_LABELS } from '../../data/pipelines'
 import { CHANNELS, DISTRIBUTE_STATUS } from '../../data/distribution'
-import { draftExtensions } from '../../lib/draftExtensions'
+import { docToHtml } from '../../lib/docHtml'
+import { hydrateImageUrls } from '../../lib/docImages'
 import { readMins } from '../../lib/articleMeta'
 import { headingRows, numberingFor } from '../../lib/outline'
 import { wordCount, hasCover } from '../../lib/text'
@@ -113,8 +114,20 @@ function GenericRecap({ idea, pipeline }: PublishedStageViewProps) {
 function ArticleRecap({ idea }: { idea: Idea }) {
   const coverUrl = useCoverUrl(idea)
   const words = wordCount(idea.doc)
-  const headings = headingRows(idea.doc ?? { type: 'doc', content: [] })
+  const headings = headingRows(idea.doc ?? { blocks: [] })
   const numbering = numberingFor(headings)
+  const [bodyHtml, setBodyHtml] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    const doc: OutputData = idea.doc ?? { blocks: [] }
+    hydrateImageUrls(doc).then((hydrated) => {
+      if (!cancelled) setBodyHtml(docToHtml(hydrated.blocks))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [idea.doc])
   const research = idea.research
   const hasResearch = research.sources.length > 0 || research.insights.length > 0 || research.questions.length > 0
   const postedChannels = CHANNELS.filter(([k]) => {
@@ -166,7 +179,7 @@ function ArticleRecap({ idea }: { idea: Idea }) {
               {idea.meta?.author ? `${idea.meta.author} · ` : ''}
               {readMins(words)} min read · {words.toLocaleString()} words
             </div>
-            <div dangerouslySetInnerHTML={{ __html: generateHTML(idea.doc!, draftExtensions) }} />
+            <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
           </>
         )}
       </article>

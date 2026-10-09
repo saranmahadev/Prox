@@ -15,7 +15,7 @@ export function DetailsSection({ idea }: DetailsSectionProps) {
   const removeTag = useIdeasStore((s) => s.removeTag)
   const [newTag, setNewTag] = useState('')
 
-  const headingCount = headingRows(idea.doc ?? { type: 'doc', content: [] }).length
+  const headingCount = headingRows(idea.doc ?? { blocks: [] }).length
   const words = wordCount(idea.doc)
 
   function handleAddTag(e: FormEvent) {

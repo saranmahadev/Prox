@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { JSONContent } from '@tiptap/core'
+import type { OutputData } from '@editorjs/editorjs'
 import { DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
@@ -17,12 +17,10 @@ import {
   setHeadingText,
 } from '../../lib/outline'
 import { useIdeasStore } from '../../state/useIdeasStore'
-import { StatusTracker } from '../ui'
 import { OutlineRow } from './outline/OutlineRow'
 import type { Idea } from '../../types/idea'
-import { stageStatusOf } from '../../lib/selectors'
 
-const EMPTY_DOC: JSONContent = { type: 'doc', content: [] }
+const EMPTY_DOC: OutputData = { blocks: [] }
 
 interface OutlineEditorViewProps {
   idea: Idea
@@ -31,7 +29,6 @@ interface OutlineEditorViewProps {
 export function OutlineEditorView({ idea }: OutlineEditorViewProps) {
   const doc = idea.doc ?? EMPTY_DOC
   const updateOutlineDoc = useIdeasStore((s) => s.updateOutlineDoc)
-  const setStageStatus = useIdeasStore((s) => s.setStageStatus)
   const [focusIndex, setFocusIndex] = useState<number | null>(null)
   const [newText, setNewText] = useState('')
   const [newLevel, setNewLevel] = useState(2)
@@ -42,7 +39,7 @@ export function OutlineEditorView({ idea }: OutlineEditorViewProps) {
   const numbering = numberingFor(rows)
   const stats = outlineStats(doc)
 
-  function apply(next: JSONContent, focusAt: number | null = null) {
+  function apply(next: OutputData, focusAt: number | null = null) {
     updateOutlineDoc(idea.id, next)
     setFocusIndex(focusAt)
   }
@@ -65,7 +62,7 @@ export function OutlineEditorView({ idea }: OutlineEditorViewProps) {
     const movedRow = rows[oldPos]
     const newArrayPos = reordered.indexOf(movedRow)
     const nextRow = reordered[newArrayPos + 1]
-    const beforeIndex = nextRow ? nextRow.index : doc.content?.length ?? 0
+    const beforeIndex = nextRow ? nextRow.index : doc.blocks?.length ?? 0
     apply(moveSectionBefore(doc, movedRow.index, beforeIndex))
   }
 
@@ -80,7 +77,6 @@ export function OutlineEditorView({ idea }: OutlineEditorViewProps) {
 
   return (
     <>
-      <StatusTracker id="trk" status={stageStatusOf(idea, 'a-outline')} onChange={(status) => setStageStatus(idea.id, 'a-outline', status)} color="var(--article)" />
       <section className="rs-sec">
         <h5>Article structure</h5>
         <p className="rs-hint">Headings only, H1 to H6. Enter adds one, Tab changes its level, Alt+↑↓ moves its section.</p>

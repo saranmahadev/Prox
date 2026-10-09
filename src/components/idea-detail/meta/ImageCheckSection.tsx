@@ -1,18 +1,17 @@
-import type { JSONContent } from '@tiptap/core'
+import type { OutputData } from '@editorjs/editorjs'
+import { stripHtml } from '../../../lib/editorjsBlocks'
 import type { Idea } from '../../../types/idea'
 
 interface ImageNode {
   alt: string
 }
 
-function collectImages(doc: JSONContent | null): ImageNode[] {
-  const out: ImageNode[] = []
-  const walk = (node: JSONContent) => {
-    if (node.type === 'image') out.push({ alt: (node.attrs?.alt as string) ?? '' })
-    node.content?.forEach(walk)
-  }
-  if (doc) walk(doc)
-  return out
+/** Editor.js's image tool has no separate alt field - its caption doubles
+ * as alt text (see DraftEditorView's captionPlaceholder). */
+function collectImages(doc: OutputData | null): ImageNode[] {
+  return (doc?.blocks ?? [])
+    .filter((block) => block.type === 'image')
+    .map((block) => ({ alt: stripHtml(block.data?.caption as string) }))
 }
 
 interface ImageCheckSectionProps {

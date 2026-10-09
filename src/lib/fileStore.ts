@@ -72,6 +72,18 @@ class FileStore {
       // ignore
     }
   }
+
+  /** Wipes every stored blob - used by the dev-only Reset Data button. */
+  async clear(): Promise<void> {
+    this.mem.clear()
+    const db = await this.db()
+    if (!db) return
+    try {
+      db.transaction('f', 'readwrite').objectStore('f').clear()
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export const fileStore = new FileStore()

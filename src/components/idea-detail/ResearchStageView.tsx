@@ -1,7 +1,6 @@
 import { useState, type DragEvent } from 'react'
 import { useIdeasStore } from '../../state/useIdeasStore'
 import { useUiStore } from '../../state/useUiStore'
-import { StatusTracker } from '../ui'
 import { openStoredFile } from '../../lib/fileStore'
 import { AddSourceForm } from './research/AddSourceForm'
 import { AddTextForm } from './research/AddTextForm'
@@ -18,7 +17,6 @@ export function ResearchStageView({ idea }: ResearchStageViewProps) {
   const r = idea.research
   const showToast = useUiStore((s) => s.showToast)
 
-  const setStageStatus = useIdeasStore((s) => s.setStageStatus)
   const addSourceLink = useIdeasStore((s) => s.addSourceLink)
   const addSourceDoc = useIdeasStore((s) => s.addSourceDoc)
   const addSourceFiles = useIdeasStore((s) => s.addSourceFiles)
@@ -71,7 +69,6 @@ export function ResearchStageView({ idea }: ResearchStageViewProps) {
   return (
     <>
       <div className="rs-sum">
-        <StatusTracker status={r.status} onChange={(status) => setStageStatus(idea.id, 'research', status)} label="Research status" />
         <div className="rs-stats">
           <span>
             <b>{r.sources.length}</b> sources

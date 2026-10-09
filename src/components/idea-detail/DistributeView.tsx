@@ -1,9 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { CHANNELS, snippet } from '../../data/distribution'
-import { stageStatusOf } from '../../lib/selectors'
 import { useIdeasStore } from '../../state/useIdeasStore'
 import { useUiStore } from '../../state/useUiStore'
-import { StatusTracker } from '../ui'
 import { ChannelRow } from './distribute/ChannelRow'
 import type { ChannelDist, Idea } from '../../types/idea'
 
@@ -14,7 +12,6 @@ interface DistributeViewProps {
 const EMPTY_CHANNEL: ChannelDist = { status: 'todo', url: '', date: '' }
 
 export function DistributeView({ idea }: DistributeViewProps) {
-  const setStageStatus = useIdeasStore((s) => s.setStageStatus)
   const setChannelStatus = useIdeasStore((s) => s.setChannelStatus)
   const setChannelField = useIdeasStore((s) => s.setChannelField)
   const addRepurpose = useIdeasStore((s) => s.addRepurpose)
@@ -45,7 +42,6 @@ export function DistributeView({ idea }: DistributeViewProps) {
 
   return (
     <>
-      <StatusTracker id="trk" status={stageStatusOf(idea, 'a-distribute')} onChange={(status) => setStageStatus(idea.id, 'a-distribute', status)} color="var(--article)" />
       <section className="rs-sec">
         <h5>
           Channels <span className="rs-count">{postedCount}/{CHANNELS.length} posted</span>

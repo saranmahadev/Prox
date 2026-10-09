@@ -23,7 +23,7 @@ export function snippet(idea: Idea, channel: string): string {
   const url = (idea.meta?.canonical || blogUrl || '').trim()
   const tags = idea.tags.map((t) => '#' + t.replace(/\s+/g, '')).join(' ')
   const excerpt = excerptOf(idea)
-  const headings = headingRows(idea.doc ?? { type: 'doc', content: [] })
+  const headings = headingRows(idea.doc ?? { blocks: [] })
     .map((h) => h.text)
     .filter(Boolean)
 

@@ -1,115 +1,72 @@
-import type { JSONContent } from '@tiptap/core'
+import type { OutputBlockData } from '@editorjs/editorjs'
+import { itemText, stripHtml, type ListItem } from './editorjsBlocks'
 
 /**
- * Manual ProseMirror-JSON -> Markdown serializer. Tiptap v3 ships internal
- * markdown parse/render hooks on some node specs, but they're undocumented
- * and not exposed as a stable top-level API - per the migration plan, this
- * manual walker (mirroring legacy's blocksToMD/inlineMD/listMD) is the
- * safer, fully-controlled fallback.
+ * Manual Editor.js blocks -> Markdown serializer. Ported from legacy's
+ * blocksToMD/inlineMD/listMD (lines 1035-1066) - block `text`/`caption`
+ * fields are inline HTML from the inline toolbar, so inline marks are
+ * translated by regex rather than parsed, same as legacy.
  */
 
-function renderMarks(text: string, marks: JSONContent['marks']): string {
-  let out = text
-  for (const mark of marks ?? []) {
-    switch (mark.type) {
-      case 'bold':
-        out = `**${out}**`
-        break
-      case 'italic':
-        out = `*${out}*`
-        break
-      case 'code':
-        out = `\`${out}\``
-        break
-      case 'strike':
-        out = `~~${out}~~`
-        break
-      case 'highlight':
-        out = `==${out}==`
-        break
-      case 'link':
-        out = `[${out}](${mark.attrs?.href ?? ''})`
-        break
-      default:
-        break
-    }
-  }
-  return out
+function inlineMarkdown(html: string | undefined): string {
+  let t = String(html ?? '')
+  t = t
+    .replace(/<(b|strong)>([\s\S]*?)<\/\1>/gi, '**$2**')
+    .replace(/<(i|em)>([\s\S]*?)<\/\1>/gi, '*$2*')
+    .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, '`$1`')
+    .replace(/<mark[^>]*>([\s\S]*?)<\/mark>/gi, '==$1==')
+    .replace(/<a [^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+  return stripHtml(t.replace(/<br\s*\/?>/gi, '\n'))
 }
 
-function renderInline(nodes: JSONContent[] | undefined): string {
-  return (nodes ?? [])
-    .map((n) => {
-      if (n.type === 'text') return renderMarks(n.text ?? '', n.marks)
-      if (n.type === 'hardBreak') return '\n'
-      return ''
+function listMarkdown(items: ListItem[] | undefined, style: string, depth: number): string {
+  return (items ?? [])
+    .map((item, n) => {
+      const text = inlineMarkdown(itemText(item))
+      const pad = '  '.repeat(depth)
+      const checked = typeof item !== 'string' && item.meta?.checked
+      const marker = style === 'ordered' ? `${n + 1}. ` : style === 'checklist' ? (checked ? '- [x] ' : '- [ ] ') : '- '
+      const nested = typeof item !== 'string' && item.items?.length ? '\n' + listMarkdown(item.items, style, depth + 1) : ''
+      return pad + marker + text + nested
     })
-    .join('')
+    .join('\n')
 }
 
-function renderListItem(item: JSONContent, ordered: boolean, index: number, depth: number): string {
-  const pad = '  '.repeat(depth)
-  const marker = ordered ? `${index + 1}. ` : '- '
-  const parts = (item.content ?? []).map((child) => {
-    if (child.type === 'bulletList' || child.type === 'orderedList') {
-      return renderList(child, depth + 1)
-    }
-    return renderInline(child.content)
-  })
-  return pad + marker + parts.join('\n' + '  '.repeat(depth + 1))
-}
-
-function renderList(node: JSONContent, depth: number): string {
-  const ordered = node.type === 'orderedList'
-  return (node.content ?? []).map((item, i) => renderListItem(item, ordered, i, depth)).join('\n')
-}
-
-function renderTable(node: JSONContent): string {
-  const rows = (node.content ?? []).map((row) =>
-    (row.content ?? []).map((cell) => (cell.content ?? []).map((p) => renderInline(p.content)).join(' ')),
-  )
-  if (!rows.length) return ''
-  const header = rows[0]
-  const sep = header.map(() => '---')
-  const body = rows.slice(1)
-  const line = (cells: string[]) => `| ${cells.join(' | ')} |`
-  return [line(header), line(sep), ...body.map(line)].join('\n')
-}
-
-function renderBlock(node: JSONContent): string {
-  switch (node.type) {
-    case 'heading': {
-      const level = Math.min(6, Math.max(1, node.attrs?.level ?? 2))
-      return '#'.repeat(level) + ' ' + renderInline(node.content)
-    }
+function renderBlock(block: OutputBlockData): string {
+  const d = block.data ?? {}
+  switch (block.type) {
+    case 'header':
+      return '#'.repeat(Math.min(6, Math.max(1, (d.level as number) ?? 2))) + ' ' + inlineMarkdown(d.text as string)
     case 'paragraph':
-      return renderInline(node.content)
-    case 'blockquote':
-      return (node.content ?? []).map((p) => '> ' + renderInline(p.content)).join('\n')
-    case 'codeBlock': {
-      const lang = node.attrs?.language ?? ''
-      const code = (node.content ?? []).map((t) => t.text ?? '').join('')
-      return '```' + lang + '\n' + code + '\n```'
-    }
-    case 'horizontalRule':
+      return inlineMarkdown(d.text as string)
+    case 'quote':
+      return '> ' + inlineMarkdown(d.text as string) + (d.caption ? '\n> — ' + inlineMarkdown(d.caption as string) : '')
+    case 'code':
+      return '```\n' + ((d.code as string) ?? '') + '\n```'
+    case 'delimiter':
       return '---'
-    case 'bulletList':
-    case 'orderedList':
-      return renderList(node, 0)
-    case 'table':
-      return renderTable(node)
-    case 'image': {
-      const alt = node.attrs?.alt ?? ''
-      const src = node.attrs?.src ?? ''
-      return `![${alt}](${src})`
+    case 'list':
+      return listMarkdown(d.items as ListItem[], (d.style as string) ?? 'unordered', 0)
+    case 'table': {
+      const rows = (d.content as string[][]) ?? []
+      if (!rows.length) return ''
+      const line = (cells: string[]) => `| ${cells.map(inlineMarkdown).join(' | ')} |`
+      const sep = `| ${rows[0].map(() => '---').join(' | ')} |`
+      return [line(rows[0]), sep, ...rows.slice(1).map(line)].join('\n')
     }
+    case 'image': {
+      const file = (d.file as { url?: string }) ?? {}
+      return `![${stripHtml(d.caption as string)}](${file.url || 'image'})`
+    }
+    case 'embed':
+      return (d.source as string) ?? ''
     default:
       return ''
   }
 }
 
-export function docToMarkdown(doc: JSONContent): string {
-  return (doc.content ?? [])
+export function docToMarkdown(blocks: OutputBlockData[]): string {
+  return blocks
     .map(renderBlock)
     .filter((s) => s !== '')
     .join('\n\n')

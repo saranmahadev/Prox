@@ -1,7 +1,4 @@
-/* Draft editor styles, ported from legacy/index.html. The Editor.js-plugin
-   specific rules (.ce-*, .cdx-*, .tc-*, .image-tool__*) are dropped - Tiptap
-   renders plain semantic HTML, so the shared .ed-preview typography block
-   below is reused directly on the live editor root (see DraftEditorView). */
+/* Draft editor styles, ported from legacy/index.html (lines 506-558). */
 
 .ed-bar {
   display: flex;
@@ -70,13 +67,193 @@
 .ed-holder {
   padding-bottom: 160px;
 }
-.ed-holder .tiptap {
-  outline: 0;
+
+/* Editor.js chrome (block toolbar, inline toolbar, settings popovers) -
+   themed to match the app instead of Editor.js's own default look. */
+.ed-holder .codex-editor__redactor {
+  padding-bottom: 160px !important;
+}
+.ed-holder .ce-block__content,
+.ed-holder .ce-toolbar__content {
+  max-width: none;
+  margin: 0;
+}
+.ed-holder .ce-toolbar__actions {
+  left: -70px;
+  right: auto;
+  padding-right: 0;
+}
+.ed-holder .ce-block {
+  font-family: var(--serif);
+  font-size: 1.28rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.ed-holder .ce-paragraph {
+  font-family: var(--serif);
+  font-size: 1.28rem;
+  line-height: 1.7;
+  padding: 0.45em 0;
+}
+.ed-holder .ce-header {
+  font-family: var(--serif);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  padding: 0.6em 0 0.2em;
+  color: var(--text);
+}
+.ed-holder h1.ce-header {
+  font-size: 2.3rem;
+}
+.ed-holder h2.ce-header {
+  font-size: 1.85rem;
+}
+.ed-holder h3.ce-header {
+  font-size: 1.5rem;
+}
+.ed-holder h4.ce-header {
+  font-size: 1.25rem;
+}
+.ed-holder h5.ce-header {
+  font-size: 1.1rem;
+}
+.ed-holder h6.ce-header {
+  font-size: 1rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ed-holder .cdx-quote__text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.5rem;
+  line-height: 1.5;
+  min-height: 0;
+  border: 0;
+  border-left: 3px solid var(--text);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 4px 0 4px 20px;
+}
+.ed-holder .cdx-quote__caption {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 4px 0 4px 20px;
+  color: var(--muted);
+}
+.ed-holder .cdx-list__item,
+.ed-holder .cdx-checklist__item-text {
+  font-family: var(--serif);
+  font-size: 1.28rem;
+  line-height: 1.65;
+}
+.ed-holder .ce-code__textarea {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  border-radius: 8px;
+  min-height: 90px;
+}
+.ed-holder .ce-delimiter {
+  line-height: 1.6em;
+  width: 100%;
+  text-align: center;
+}
+.ed-holder .ce-delimiter::before {
+  color: var(--muted);
+  letter-spacing: 0.5em;
+}
+.ed-holder .tc-table {
+  border-color: var(--border2);
+}
+.ed-holder .tc-cell {
+  border-color: var(--border2);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+}
+.ed-holder .image-tool__caption,
+.ed-holder .cdx-input {
+  background: transparent;
+  border-color: var(--border);
+  box-shadow: none;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+.ed-holder .image-tool__image-picture {
+  max-width: 100%;
+}
+.ed-holder .cdx-button {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border2);
+}
+.ed-holder ::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+/* popovers + toolbars follow the theme */
+.ce-popover,
+.ce-popover__container,
+.ce-inline-toolbar--showed,
+.ce-conversion-toolbar,
+.ce-settings {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border2) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.ce-popover-item__title,
+.ce-popover-item__icon,
+.ce-inline-tool,
+.ce-inline-toolbar__dropdown,
+.ce-toolbar__plus,
+.ce-toolbar__settings-btn {
+  color: var(--text) !important;
+}
+.ce-popover-item__icon {
+  background: var(--surface2) !important;
+  box-shadow: none !important;
+}
+.ce-popover-item:hover,
+.ce-popover-item--focused,
+.ce-inline-tool:hover,
+.ce-inline-toolbar__dropdown:hover,
+.ce-toolbar__plus:hover,
+.ce-toolbar__settings-btn:hover {
+  background: var(--surface2) !important;
+}
+.ce-popover__search,
+.cdx-search-field {
+  background: var(--surface2) !important;
+  border-color: var(--border) !important;
+}
+.cdx-search-field__input {
+  color: var(--text) !important;
+}
+.ce-inline-tool-input {
+  background: var(--surface2) !important;
+  color: var(--text) !important;
+  border-color: var(--border2) !important;
+}
+.ce-inline-tool--active {
+  color: var(--accent) !important;
+}
+.ce-block--selected .ce-block__content {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.codex-editor--narrow .ce-toolbar__actions {
+  right: auto;
 }
 
 /* Preview + live-editor typography, ported from legacy's .ed-preview block
    (lines 548-558). Plain tag selectors, so the same rules work for both
-   the Tiptap editing surface and the read-only preview/published body. */
+   the rendered preview/published body and - where Editor.js's own classes
+   above don't already cover it - the live editing surface. */
 .ed-preview {
   font-family: var(--serif);
   font-size: 1.28rem;
@@ -172,4 +349,8 @@
 }
 .ed-preview a {
   color: var(--accent);
+}
+.pv-check {
+  list-style: none;
+  padding-left: 0;
 }

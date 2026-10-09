@@ -1,10 +1,11 @@
-import type { JSONContent } from '@tiptap/core'
+import type { OutputData } from '@editorjs/editorjs'
 import type { PipelineId } from './pipeline'
 
 /**
  * The 4-state progress enum shared by the Research stage and every
  * article "tool" stage (outline/draft/meta/distribute). Order matters -
- * it's also the display order in the StatusTracker.
+ * it drives the progress fraction in selectors.ts (statusIndex) and the
+ * status label shown in ResearchRecap.
  */
 export const STAGE_STATUS_STEPS = [
   ['todo', 'Yet to Begin'],
@@ -110,7 +111,7 @@ export interface Idea {
   research: Research
   stageStatus: Record<string, StageStatus> // keyed by "tool stage" id
 
-  doc: JSONContent | null // Tiptap document, article pipeline only
+  doc: OutputData | null // Editor.js document, article pipeline only
   meta: ArticleMeta | null // article pipeline only
   dist: Distribution | null // article pipeline only
 }

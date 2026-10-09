@@ -1,6 +1,4 @@
-/* Research workspace styles, ported from legacy/index.html (the .rs-*
-   rules, excluding .rs-track which already lives in components.css as
-   part of the shared StatusTracker atom). */
+/* Research workspace styles, ported from legacy/index.html (the .rs-* rules). */
 
 .rs-sum {
   display: block;

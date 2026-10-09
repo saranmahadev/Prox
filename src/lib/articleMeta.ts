@@ -1,5 +1,6 @@
-import type { JSONContent } from '@tiptap/core'
+import type { OutputData } from '@editorjs/editorjs'
 import type { Idea } from '../types/idea'
+import { stripHtml } from './editorjsBlocks'
 
 /** Ported from legacy's slugify() (line 1153). */
 export function slugify(s: string): string {
@@ -12,13 +13,10 @@ export function slugify(s: string): string {
     .slice(0, 70)
 }
 
-function firstParagraphText(doc: JSONContent | null): string {
-  for (const node of doc?.content ?? []) {
-    if (node.type === 'paragraph') {
-      const text = (node.content ?? [])
-        .filter((n) => n.type === 'text')
-        .map((n) => n.text ?? '')
-        .join('')
+function firstParagraphText(doc: OutputData | null): string {
+  for (const block of doc?.blocks ?? []) {
+    if (block.type === 'paragraph') {
+      const text = stripHtml(block.data?.text as string)
       if (text.trim()) return text
     }
   }

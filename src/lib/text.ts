@@ -1,17 +1,34 @@
-import type { JSONContent } from '@tiptap/core'
+import type { OutputData, OutputBlockData } from '@editorjs/editorjs'
 import type { Idea } from '../types/idea'
+import { flatListTexts, stripHtml, type ListItem } from './editorjsBlocks'
 
-/** Word count across a Tiptap document (replaces legacy's wordsOf, which
- * walked Editor.js blocks instead of a ProseMirror doc). */
-export function wordCount(doc: JSONContent | null): number {
-  if (!doc) return 0
-  let text = ''
-  const walk = (node: JSONContent) => {
-    if (node.text) text += node.text + ' '
-    node.content?.forEach(walk)
+function blockPlainText(block: OutputBlockData): string {
+  const d = block.data ?? {}
+  switch (block.type) {
+    case 'header':
+    case 'paragraph':
+      return stripHtml(d.text as string)
+    case 'quote':
+      return stripHtml(d.text as string) + (d.caption ? ' ' + stripHtml(d.caption as string) : '')
+    case 'list':
+      return flatListTexts(d.items as ListItem[]).map(stripHtml).join(' ')
+    case 'code':
+      return (d.code as string) || ''
+    case 'table':
+      return ((d.content as string[][]) ?? []).flat().map(stripHtml).join(' ')
+    case 'image':
+      return stripHtml(d.caption as string)
+    default:
+      return ''
   }
-  walk(doc)
-  return text.trim() ? text.trim().split(/\s+/).length : 0
+}
+
+/** Word count across the Editor.js document - ports legacy's wordsOf(),
+ * which walked blocks the same way (lines 904-916). */
+export function wordCount(doc: OutputData | null): number {
+  if (!doc) return 0
+  const text = (doc.blocks ?? []).map(blockPlainText).join(' ').trim()
+  return text ? text.split(/\s+/).length : 0
 }
 
 export function hasCover(idea: Idea): boolean {

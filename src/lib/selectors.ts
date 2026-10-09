@@ -5,7 +5,7 @@ import type { Pipeline, Stage } from '../types/pipeline'
 import { TOOL_STAGE_IDS } from '../types/pipeline'
 
 /** True for 'research' and the 4 article "tool" stages: stages tracked via
- * the 4-state StatusTracker instead of a checklist. */
+ * the 4-state StageStatus value instead of a checklist. */
 export function isStatusTrackedStage(stageId: string): boolean {
   return stageId === 'research' || (TOOL_STAGE_IDS as readonly string[]).includes(stageId)
 }

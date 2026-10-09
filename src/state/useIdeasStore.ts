@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { JSONContent } from '@tiptap/core'
+import type { OutputData } from '@editorjs/editorjs'
 import { createSeedIdeas, createSeedSeries } from '../data/seed'
 import { createChecklistState, createIdea, type NewIdeaInput } from '../lib/ideaFactory'
 import { fileStore, MAX_FILE_SIZE } from '../lib/fileStore'
 import { stripImageUrls } from '../lib/docImages'
+import { migrateTiptapDoc } from '../lib/migrateTiptapDoc'
 import { uid } from '../lib/id'
 import { debounced, localStorageAdapter } from '../lib/storage'
 import { isDone, pipeOf, stageOf } from '../lib/selectors'
@@ -16,6 +17,10 @@ const ideasStorage = debounced(localStorageAdapter)
 interface IdeasState {
   ideas: Idea[]
   series: Series[]
+
+  /** Dev-only: wipes every idea/series/file and reseeds from scratch - see
+   * ResetDataButton.tsx. Remove once there's a real backend to reset against. */
+  resetData: () => Promise<void>
 
   addIdea: (input: NewIdeaInput) => Idea
   updateIdea: (id: string, patch: Partial<Idea>) => void
@@ -36,8 +41,8 @@ interface IdeasState {
   archiveIdea: (id: string) => void
   restoreIdea: (id: string) => void
 
-  updateDraftDoc: (ideaId: string, doc: JSONContent) => void
-  updateOutlineDoc: (ideaId: string, doc: JSONContent) => void
+  updateDraftDoc: (ideaId: string, doc: OutputData) => void
+  updateOutlineDoc: (ideaId: string, doc: OutputData) => void
 
   addSourceLink: (ideaId: string, url: string, title: string) => void
   addSourceDoc: (ideaId: string, title: string) => void
@@ -94,13 +99,10 @@ function blobKeysOf(idea: Idea): string[] {
   const keys: string[] = []
   for (const source of idea.research.sources) if (source.file) keys.push(source.file.key)
   if (idea.meta?.cover) keys.push(idea.meta.cover.key)
-  const walk = (node: unknown): void => {
-    if (!node || typeof node !== 'object') return
-    const n = node as { type?: string; attrs?: Record<string, unknown>; content?: unknown[] }
-    if (n.type === 'image' && typeof n.attrs?.fileKey === 'string') keys.push(n.attrs.fileKey)
-    n.content?.forEach(walk)
+  for (const block of idea.doc?.blocks ?? []) {
+    const key = (block.data as { file?: { key?: string } } | undefined)?.file?.key
+    if (block.type === 'image' && typeof key === 'string') keys.push(key)
   }
-  walk(idea.doc)
   return keys
 }
 
@@ -109,6 +111,11 @@ export const useIdeasStore = create<IdeasState>()(
     (set, get) => ({
       ideas: createSeedIdeas(),
       series: createSeedSeries(),
+
+      resetData: async () => {
+        await fileStore.clear()
+        set({ ideas: createSeedIdeas(), series: createSeedSeries() })
+      },
 
       addIdea: (input) => {
         const idea = createIdea(input)
@@ -441,6 +448,19 @@ export const useIdeasStore = create<IdeasState>()(
     {
       name: 'prox-ideas-v1',
       storage: createJSONStorage(() => ideasStorage),
+      version: 1,
+      // v0 -> v1: Idea.doc moved from a Tiptap/ProseMirror document to an
+      // Editor.js OutputData document - convert any already-persisted docs
+      // instead of silently losing them (see migrateTiptapDoc.ts).
+      migrate: (persisted, version) => {
+        const state = persisted as { ideas?: Idea[]; series?: Series[] }
+        if (version < 1 && state?.ideas) {
+          state.ideas = state.ideas.map((idea) =>
+            idea.doc && (idea.doc as unknown as { type?: string }).type === 'doc' ? { ...idea, doc: migrateTiptapDoc(idea.doc) } : idea,
+          )
+        }
+        return state as IdeasState
+      },
     },
   ),
 )

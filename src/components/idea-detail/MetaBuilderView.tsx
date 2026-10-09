@@ -1,7 +1,6 @@
-import { seriesMembers, stageStatusOf } from '../../lib/selectors'
+import { seriesMembers } from '../../lib/selectors'
 import { useIdeasStore } from '../../state/useIdeasStore'
 import { useUiStore } from '../../state/useUiStore'
-import { StatusTracker } from '../ui'
 import { SeriesSection } from './meta/SeriesSection'
 import { CoverSection } from './meta/CoverSection'
 import { SeoSection } from './meta/SeoSection'
@@ -19,7 +18,6 @@ interface MetaBuilderViewProps {
 export function MetaBuilderView({ idea, pipeline }: MetaBuilderViewProps) {
   const ideas = useIdeasStore((s) => s.ideas)
   const series = useIdeasStore((s) => s.series)
-  const setStageStatus = useIdeasStore((s) => s.setStageStatus)
   const goToStage = useIdeasStore((s) => s.goToStage)
   const openIdea = useUiStore((s) => s.openIdea)
 
@@ -28,7 +26,6 @@ export function MetaBuilderView({ idea, pipeline }: MetaBuilderViewProps) {
 
   return (
     <>
-      <StatusTracker id="trk" status={stageStatusOf(idea, 'a-meta')} onChange={(status) => setStageStatus(idea.id, 'a-meta', status)} color="var(--article)" />
       <div className="meta-grid">
         <div className="meta-main">
           <SeriesSection idea={idea} series={series} members={members} onOpenIdea={openIdea} />

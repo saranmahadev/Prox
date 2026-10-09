@@ -1,18 +1,30 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
-import { generateHTML, type JSONContent } from '@tiptap/core'
-import { draftExtensions } from '../../lib/draftExtensions'
+import { useEffect, useRef, useState } from 'react'
+import EditorJS, { type OutputData, type BlockToolConstructable } from '@editorjs/editorjs'
+import Header from '@editorjs/header'
+import List from '@editorjs/list'
+import Quote from '@editorjs/quote'
+import CodeTool from '@editorjs/code'
+import Delimiter from '@editorjs/delimiter'
+import Table from '@editorjs/table'
+import ImageTool from '@editorjs/image'
+import Embed from '@editorjs/embed'
+import InlineCode from '@editorjs/inline-code'
+import Marker from '@editorjs/marker'
+import Underline from '@editorjs/underline'
+import Undo from 'editorjs-undo'
 import { hydrateImageUrls } from '../../lib/docImages'
+import { docToHtml } from '../../lib/docHtml'
 import { fileStore } from '../../lib/fileStore'
 import { uid } from '../../lib/id'
 import { docToMarkdown } from '../../lib/markdown'
-import { stageStatusOf } from '../../lib/selectors'
+import { readMins } from '../../lib/articleMeta'
+import { wordCount } from '../../lib/text'
 import { useIdeasStore } from '../../state/useIdeasStore'
 import { useUiStore } from '../../state/useUiStore'
-import { StatusTracker, AutoGrowTextarea } from '../ui'
+import { AutoGrowTextarea } from '../ui'
 import type { Idea } from '../../types/idea'
 
-const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
+const EMPTY_DOC: OutputData = { blocks: [] }
 
 interface DraftEditorViewProps {
   idea: Idea
@@ -23,7 +35,7 @@ interface DraftEditorViewProps {
  * mountDraft() awaiting blobURL() for each image before instantiating
  * Editor.js (lines 1102-1109). */
 export function DraftEditorView({ idea }: DraftEditorViewProps) {
-  const [hydrated, setHydrated] = useState<{ ideaId: string; doc: JSONContent } | null>(null)
+  const [hydrated, setHydrated] = useState<{ ideaId: string; doc: OutputData } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -35,57 +47,118 @@ export function DraftEditorView({ idea }: DraftEditorViewProps) {
     }
   }, [idea.id])
 
-  const setStageStatus = useIdeasStore((s) => s.setStageStatus)
-  const color = `var(--article)`
-
   if (hydrated?.ideaId !== idea.id) {
-    return (
-      <>
-        <StatusTracker id="trk" status={stageStatusOf(idea, 'a-draft')} onChange={(status) => setStageStatus(idea.id, 'a-draft', status)} color={color} />
-        <p className="text-muted">Loading draft…</p>
-      </>
-    )
+    return <p className="text-muted">Loading draft…</p>
   }
 
   return <DraftEditor key={idea.id} idea={idea} initialDoc={hydrated.doc} />
 }
 
-function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: JSONContent }) {
+function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData }) {
   const updateIdea = useIdeasStore((s) => s.updateIdea)
   const updateDraftDoc = useIdeasStore((s) => s.updateDraftDoc)
-  const setStageStatus = useIdeasStore((s) => s.setStageStatus)
   const showToast = useUiStore((s) => s.showToast)
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode)
 
   const [preview, setPreview] = useState(false)
   const [previewHtml, setPreviewHtml] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [words, setWords] = useState(wordCount(initialDoc))
+  const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved')
+  const holderRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<EditorJS | null>(null)
+  const undoRef = useRef<Undo | null>(null)
+  const latestDocRef = useRef<OutputData>(initialDoc)
 
-  const editor = useEditor({
-    extensions: draftExtensions,
-    content: initialDoc,
-    editorProps: { attributes: { class: 'ed-preview' } },
-    onUpdate: ({ editor }) => {
-      updateDraftDoc(idea.id, editor.getJSON())
-    },
-  })
+  // Mounts one Editor.js instance for the lifetime of this component - the
+  // parent remounts the whole tree via key={idea.id}, so this never needs
+  // to re-run for a doc/idea change. Mirrors legacy's mountDraft() (lines
+  // 1102-1133); autosaves on every change via onChange.
+  useEffect(() => {
+    const holder = holderRef.current
+    if (!holder) return
 
-  const words = editor?.storage.characterCount?.words() ?? 0
-  const readMins = Math.max(1, Math.round(words / 200))
+    const editor = new EditorJS({
+      holder,
+      data: initialDoc,
+      placeholder: 'Tell your story…',
+      inlineToolbar: true,
+      tools: {
+        header: { class: Header, inlineToolbar: true, config: { levels: [1, 2, 3, 4, 5, 6], defaultLevel: 2 } },
+        list: { class: List, inlineToolbar: true, config: { defaultStyle: 'unordered' } },
+        quote: { class: Quote, inlineToolbar: true, config: { quotePlaceholder: 'Quote', captionPlaceholder: 'Author' } },
+        code: CodeTool,
+        delimiter: Delimiter,
+        // @editorjs/table's own constructor-options type makes `config`
+        // required, which @editorjs/editorjs's general BlockToolConstructable
+        // doesn't allow - a type mismatch in the package itself, not in this
+        // config.
+        table: { class: Table as unknown as BlockToolConstructable, inlineToolbar: true, config: {} },
+        image: {
+          class: ImageTool,
+          config: {
+            captionPlaceholder: 'Caption (also used as alt text)',
+            uploader: {
+              async uploadByFile(file: File) {
+                const key = uid()
+                await fileStore.put(key, file)
+                return { success: 1, file: { key, url: URL.createObjectURL(file) } }
+              },
+              async uploadByUrl(url: string) {
+                return { success: 1, file: { url } }
+              },
+            },
+          },
+        },
+        embed: Embed,
+        inlineCode: InlineCode,
+        marker: Marker,
+        underline: Underline,
+      },
+      onReady: () => {
+        try {
+          const undo = new Undo({ editor })
+          undo.initialize(initialDoc)
+          undoRef.current = undo
+        } catch {
+          undoRef.current = null
+        }
+      },
+      onChange: async (api) => {
+        setSaveState('saving')
+        try {
+          const out = await api.saver.save()
+          latestDocRef.current = out
+          updateDraftDoc(idea.id, out)
+          setWords(wordCount(out))
+        } finally {
+          setSaveState('saved')
+        }
+      },
+    })
+    editorRef.current = editor
 
-  async function handleInsertImage(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file || !editor) return
-    const key = uid()
-    await fileStore.put(key, file)
-    const url = URL.createObjectURL(file)
-    editor.chain().focus().insertContent({ type: 'image', attrs: { src: url, alt: '', fileKey: key } }).run()
-  }
+    return () => {
+      editorRef.current = null
+      undoRef.current = null
+      // Destroy synchronously, not after an awaited save - React 18 Strict
+      // Mode double-invokes this effect in dev (mount -> cleanup -> mount),
+      // and an async destroy() would fire after the *next* instance already
+      // mounted into the same holder, tearing its toolbar DOM out from
+      // under it. onChange already autosaves on every edit, so nothing is
+      // lost by not also flushing here.
+      try {
+        editor.destroy()
+      } catch {
+        /* not finished initializing yet - nothing to tear down */
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const readMinutes = readMins(words)
 
   async function handleCopyMarkdown() {
-    const doc = editor?.getJSON() ?? initialDoc
-    const md = docToMarkdown(doc)
+    const md = docToMarkdown(latestDocRef.current.blocks ?? [])
     const full = (idea.title ? `# ${idea.title}\n\n` : '') + md
     try {
       await navigator.clipboard.writeText(full)
@@ -95,38 +168,31 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: JSONContent
     }
   }
 
-  function handleTogglePreview() {
+  async function handleTogglePreview() {
     const next = !preview
-    if (next && editor) {
-      setPreviewHtml(generateHTML(editor.getJSON(), draftExtensions))
+    if (next && editorRef.current) {
+      const out = await editorRef.current.save()
+      latestDocRef.current = out
+      const hydrated = await hydrateImageUrls(out)
+      setPreviewHtml(docToHtml(hydrated.blocks))
     }
     setPreview(next)
   }
 
   return (
     <>
-      <StatusTracker
-        id="trk"
-        status={stageStatusOf(idea, 'a-draft')}
-        onChange={(status) => setStageStatus(idea.id, 'a-draft', status)}
-        color="var(--article)"
-      />
       <div className="ed-bar" role="toolbar" aria-label="Editor tools">
-        <button className="btn" type="button" title="Undo" onClick={() => editor?.commands.undo()}>
+        <button className="btn" type="button" title="Undo" onClick={() => undoRef.current?.undo()}>
           ↶
         </button>
-        <button className="btn" type="button" title="Redo" onClick={() => editor?.commands.redo()}>
+        <button className="btn" type="button" title="Redo" onClick={() => undoRef.current?.redo()}>
           ↷
         </button>
-        <button className="btn" type="button" title="Insert image" onClick={() => fileInputRef.current?.click()}>
-          🖼 Image
-        </button>
-        <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleInsertImage} />
         <span className="ed-sp" />
         <span className="ed-words">
-          {words.toLocaleString()} words · {readMins} min read
+          {words.toLocaleString()} words · {readMinutes} min read
         </span>
-        <span className="ed-saved">Saved</span>
+        <span className="ed-saved">{saveState === 'saving' ? 'Saving…' : 'Saved'}</span>
         <span className="ed-sp" />
         <button className="btn" type="button" aria-pressed={preview} onClick={handleTogglePreview}>
           {preview ? 'Edit' : 'Preview'}
@@ -153,12 +219,9 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: JSONContent
           value={idea.summary}
           onChange={(e) => updateIdea(idea.id, { summary: e.target.value })}
         />
-        {preview ? (
+        <div className="ed-holder" hidden={preview} ref={holderRef} />
+        {preview && (
           <div className="ed-preview" dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="rs-empty">Nothing written yet.</p>' }} />
-        ) : (
-          <div className="ed-holder">
-            <EditorContent editor={editor} />
-          </div>
         )}
       </article>
     </>
