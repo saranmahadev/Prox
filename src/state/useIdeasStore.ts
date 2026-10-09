@@ -113,8 +113,11 @@ export const useIdeasStore = create<IdeasState>()(
       series: createSeedSeries(),
 
       resetData: async () => {
-        await fileStore.clear()
+        // The actual reset must never be gated on file cleanup - if
+        // fileStore.clear() ever hangs or rejects, ideas/series still need
+        // to flip immediately. Blob cleanup is best-effort afterward.
         set({ ideas: createSeedIdeas(), series: createSeedSeries() })
+        await fileStore.clear().catch(() => {})
       },
 
       addIdea: (input) => {

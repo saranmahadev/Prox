@@ -21,6 +21,9 @@ interface BoardState {
   toggleFilterPriority: (pipelineId: PipelineId, priority: Priority) => void
   toggleFilterTag: (pipelineId: PipelineId, tag: string) => void
   clearFilter: (pipelineId: PipelineId) => void
+  /** Used by the dev-only Reset Data button - a leftover search/filter
+   * would otherwise hide the reseeded ideas and look like reset failed. */
+  resetFilters: () => void
 }
 
 function filterOf(state: BoardState, id: PipelineId): PipelineFilter {
@@ -61,6 +64,10 @@ export const useBoardStore = create<BoardState>()(
         set((s) => ({
           perPipelineFilters: { ...s.perPipelineFilters, [pipelineId]: { priority: [], tags: [] } },
         }))
+      },
+
+      resetFilters: () => {
+        set({ filter: 'all', query: '', perPipelineFilters: {}, openFilterPopover: null })
       },
     }),
     {

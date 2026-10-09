@@ -140,17 +140,21 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
     return () => {
       editorRef.current = null
       undoRef.current = null
-      // Destroy synchronously, not after an awaited save - React 18 Strict
-      // Mode double-invokes this effect in dev (mount -> cleanup -> mount),
-      // and an async destroy() would fire after the *next* instance already
-      // mounted into the same holder, tearing its toolbar DOM out from
-      // under it. onChange already autosaves on every edit, so nothing is
-      // lost by not also flushing here.
+      // React 18 Strict Mode double-invokes this effect in dev (mount ->
+      // cleanup -> mount), and EditorJS.destroy() tears its blocks down
+      // *asynchronously* internally (BlockManager.destroy() awaits each
+      // block's own destroy()) - calling it here doesn't finish before the
+      // next mount's `new EditorJS({holder, ...})` runs into the same
+      // holder, so both instances' toolbars end up in the DOM at once
+      // ("two versions" of the editor). Clearing the holder ourselves,
+      // synchronously, guarantees a clean slate for the next mount no
+      // matter when EditorJS's own async teardown actually finishes.
       try {
         editor.destroy()
       } catch {
         /* not finished initializing yet - nothing to tear down */
       }
+      holder.innerHTML = ''
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
