@@ -4,6 +4,7 @@ import { Board } from './components/board'
 import { IdeaDetailPage } from './components/idea-detail/IdeaDetailPage'
 import { ArchivePage } from './components/archive/ArchivePage'
 import { CaptureModal } from './components/capture/CaptureModal'
+import { PullCordBulb } from './components/theme/PullCordBulb'
 import { Toast } from './components/ui'
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
       <IdeaDetailPage drawer={drawer} onEdit={openCaptureEdit} />
       <ArchivePage />
       <CaptureModal />
+      <PullCordBulb />
       <Toast />
     </>
   )
