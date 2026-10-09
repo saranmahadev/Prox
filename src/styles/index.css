@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+@import './tokens.css';
+@import './components.css';
+
+/* Map the CSS custom-property theme system onto Tailwind v4 utilities
+   (bg-surface, text-muted, border-article, font-serif, ...). The variables
+   themselves keep driving the actual light/dark [data-theme] toggle below -
+   Tailwind just reads through them. */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface2);
+  --color-border: var(--border);
+  --color-border2: var(--border2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-ink-on-clay: var(--ink-on-clay);
+
+  --color-article: var(--article);
+  --color-video: var(--video);
+  --color-short: var(--short);
+  --color-workshop: var(--workshop);
+  --color-podcast: var(--podcast);
+  --color-course: var(--course);
+  --color-newsletter: var(--newsletter);
+  --color-carousel: var(--carousel);
+  --color-products: var(--products);
+
+  --font-serif: var(--serif);
+  --font-sans: var(--sans);
+
+  --radius-card: var(--r);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    background-color: var(--border2);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted);
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.25s, color 0.25s;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    border: 0;
+    background: none;
+  }
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+  :focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  [hidden] {
+    display: none !important;
+  }
+}

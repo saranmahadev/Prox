@@ -1,0 +1,78 @@
+/* Design tokens, ported verbatim from legacy/index.html (lines 10-31). */
+
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f7f7f7;
+  --border: #e6e6e6;
+  --border2: #cfcfcf;
+  --text: #242424;
+  --muted: #6b6b6b;
+  --accent: #1a8917;
+  --accent-ink: #fff;
+  --article: #c4572f;
+  --video: #2f8a5c;
+  --short: #bf3f66;
+  --workshop: #2f78b0;
+  --podcast: #a9740f;
+  --course: #7a4aa8;
+  --newsletter: #1f8a8a;
+  --carousel: #4a4fb8;
+  --products: #6b8f1f;
+  --ink-on-clay: #fff;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.18);
+  --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r: 10px;
+}
+
+:root[data-theme='dark'] {
+  --bg: #121212;
+  --surface: #1a1a1a;
+  --surface2: #1f1f1f;
+  --border: #2e2e2e;
+  --border2: #444;
+  --text: #e8e8e8;
+  --muted: #9b9b9b;
+  --accent: #4cc257;
+  --accent-ink: #0b0b0b;
+  --article: #ee8a63;
+  --video: #5fc08c;
+  --short: #ee7f9f;
+  --workshop: #6fb0e3;
+  --podcast: #e8b84a;
+  --course: #b88ae0;
+  --newsletter: #5fd4ce;
+  --carousel: #9098e8;
+  --products: #a8d65a;
+  --ink-on-clay: #101010;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #121212;
+    --surface: #1a1a1a;
+    --surface2: #1f1f1f;
+    --border: #2e2e2e;
+    --border2: #444;
+    --text: #e8e8e8;
+    --muted: #9b9b9b;
+    --accent: #4cc257;
+    --accent-ink: #0b0b0b;
+    --article: #ee8a63;
+    --video: #5fc08c;
+    --short: #ee7f9f;
+    --workshop: #6fb0e3;
+    --podcast: #e8b84a;
+    --course: #b88ae0;
+    --newsletter: #5fd4ce;
+    --carousel: #9098e8;
+    --products: #a8d65a;
+    --ink-on-clay: #101010;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.7);
+  }
+}

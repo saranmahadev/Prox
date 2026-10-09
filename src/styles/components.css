@@ -1,0 +1,371 @@
+/* Atom styles ported from legacy/index.html, kept as plain CSS (not Tailwind
+   utilities) because they lean on color-mix() and dynamic --c theming that
+   Tailwind can't express cleanly. Declaration order matches the source file
+   so the cascade (e.g. the second .chip block overriding the first) behaves
+   identically. */
+
+.clay {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.well {
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid transparent;
+}
+
+.btn {
+  padding: 0.42rem 0.95rem;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border2);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.btn:hover {
+  border-color: var(--text);
+}
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.btn.primary:hover {
+  filter: brightness(0.92);
+}
+.btn.danger {
+  color: #b4352a;
+  border-color: color-mix(in srgb, #b4352a 45%, var(--border));
+}
+:root[data-theme='dark'] .btn.danger {
+  color: #f09a8a;
+}
+.btn[disabled] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.btn.icon {
+  padding: 0.45rem 0.65rem;
+  position: relative;
+}
+.btn.icon.on {
+  background: var(--c);
+  border-color: var(--c);
+  color: var(--ink-on-clay);
+}
+
+.chip {
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.84rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--surface2);
+  border: 1px solid transparent;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+.chip:hover {
+  color: var(--text);
+}
+.chip[aria-pressed='true'],
+.chip[aria-checked='true'] {
+  background: var(--text);
+  color: var(--bg);
+}
+.chip .dot {
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--c);
+}
+.chip em {
+  font-style: normal;
+  font-size: 0.74rem;
+  font-weight: 500;
+  opacity: 0.7;
+}
+/* second pass of .chip rules in the original stylesheet; later declarations
+   win where properties repeat */
+.chip {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 0.4rem 0.9rem 0.4rem 0.8rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.chip:hover {
+  border-color: var(--c, var(--text));
+  color: var(--text);
+}
+.chip .dot {
+  width: 0.7em;
+  height: 0.7em;
+  box-shadow: none;
+}
+.chip em {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.02rem 0.5rem;
+  border-radius: 99px;
+  background: var(--surface2);
+  color: var(--muted);
+  opacity: 1;
+}
+.chip[aria-pressed='true'],
+.chip[aria-checked='true'] {
+  background: var(--c, var(--text));
+  border-color: var(--c, var(--text));
+  color: var(--ink-on-clay);
+  font-weight: 600;
+  box-shadow: 0 5px 14px -5px color-mix(in srgb, var(--c, var(--text)) 70%, transparent);
+  transform: translateY(-1px);
+}
+.chip[aria-pressed='true'] .dot,
+.chip[aria-checked='true'] .dot {
+  background: var(--ink-on-clay);
+}
+.chip[aria-pressed='true'] em,
+.chip[aria-checked='true'] em {
+  background: color-mix(in srgb, var(--ink-on-clay) 24%, transparent);
+  color: var(--ink-on-clay);
+}
+
+.ring {
+  position: relative;
+  width: var(--s, 64px);
+  height: var(--s, 64px);
+  flex: none;
+}
+.ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.ring .bg {
+  stroke: var(--border);
+  fill: none;
+}
+.ring .fg {
+  fill: none;
+  stroke: var(--c, var(--accent));
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease;
+}
+.ring b {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.7em;
+  font-weight: 600;
+}
+
+.bar {
+  height: 4px;
+  border-radius: 99px;
+  background: var(--border);
+  overflow: hidden;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--c);
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+/* status tracker (todo/doing/done/reviewed) */
+.rs-track {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.rs-track button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.rs-track button:hover {
+  border-color: var(--text);
+  color: var(--text);
+}
+.rs-track .dot {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1.5px solid var(--border2);
+}
+.rs-track .past {
+  color: var(--text);
+}
+.rs-track .past .dot {
+  background: var(--c, var(--accent));
+  border-color: var(--c, var(--accent));
+  color: var(--ink-on-clay);
+}
+.rs-track .now {
+  color: var(--text);
+  font-weight: 600;
+  border-color: var(--c, var(--accent));
+  box-shadow: 0 0 0 1px var(--c, var(--accent)) inset;
+}
+.rs-track .now .dot {
+  border-color: var(--c, var(--accent));
+  color: var(--c, var(--accent));
+}
+@media (max-width: 640px) {
+  .rs-track {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* overlay shells: backdrop + the two base overlay primitives (Modal, DrawerShell).
+   Only the generic open/close mechanics live here - per-view inner layout
+   (dlg-head, dlg-body, rail, ...) is added alongside the idea-detail views. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.75);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 40;
+}
+:root[data-theme='dark'] .scrim {
+  background: rgba(0, 0, 0, 0.6);
+}
+.scrim.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+aside.drawer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 50;
+  padding: 0;
+  overflow: hidden;
+  --r: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: translateY(18px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s ease, opacity 0.2s;
+}
+aside.drawer.open {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+.x {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  padding: 0 !important;
+}
+.kicker {
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.modal {
+  position: fixed;
+  z-index: 55;
+  left: 50%;
+  top: 50%;
+  width: min(600px, calc(100% - 24px));
+  max-height: calc(100vh - 28px);
+  overflow: auto;
+  padding: 36px 38px;
+  --r: 12px;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, -47%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s ease, opacity 0.2s;
+}
+.modal.open {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal.full {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: none;
+  transform: translateY(18px);
+}
+.modal.full.open {
+  transform: none;
+}
+@media (max-width: 640px) {
+  aside.drawer {
+    padding: 0;
+  }
+  .modal {
+    padding: 28px 22px;
+  }
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 220%);
+  padding: 0.6rem 1.2rem;
+  z-index: 70;
+  font-weight: 500;
+  font-size: 0.88rem;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  border: 0;
+  transition: transform 0.3s ease;
+}
+.toast.show {
+  transform: translate(-50%, 0);
+}
