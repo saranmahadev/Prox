@@ -1,3 +1,4 @@
+import { useDroppable } from '@dnd-kit/core'
 import type { Idea } from '../../types/idea'
 import type { Pipeline } from '../../types/pipeline'
 
@@ -11,6 +12,10 @@ export function ArchiveFolderWidget({ pipeline, archivedIdeas, onOpen }: Archive
   const n = archivedIdeas.length
   const prev = [...archivedIdeas].sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0)).slice(0, 3).reverse()
   const offset = 3 - prev.length
+  const { setNodeRef, isOver } = useDroppable({
+    id: `${pipeline.id}:archive`,
+    data: { pipelineId: pipeline.id, archive: true },
+  })
 
   return (
     <>
@@ -24,7 +29,8 @@ export function ArchiveFolderWidget({ pipeline, archivedIdeas, onOpen }: Archive
           <em>{n}</em>
         </button>
         <button
-          className="dropwell fbtn"
+          ref={setNodeRef}
+          className={`dropwell fbtn${isOver ? ' over' : ''}`}
           aria-label={`Open ${pipeline.name} archive, ${n} ideas`}
           onClick={() => onOpen?.(pipeline.id)}
         >

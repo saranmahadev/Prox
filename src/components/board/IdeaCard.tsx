@@ -1,3 +1,5 @@
+import { useDraggable } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import { PRIORITY_LABELS } from '../../data/pipelines'
 import { isDone, progress } from '../../lib/selectors'
 import { hasCover, wordCount } from '../../lib/text'
@@ -42,10 +44,18 @@ function ArticleMeta({ idea }: { idea: Idea }) {
 export function IdeaCard({ idea, pipeline, onOpen, onArchive }: IdeaCardProps) {
   const done = isDone(idea)
   const f = progress(idea)
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: idea.id,
+    data: { pipelineId: idea.type },
+  })
 
   return (
     <div
-      className="idea tint"
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ transform: CSS.Translate.toString(transform) }}
+      className={`idea tint${isDragging ? ' dragging' : ''}`}
       role="button"
       tabIndex={0}
       aria-label={`${idea.title}, ${Math.round(f * 100)}% through ${pipeline.name} Prox`}

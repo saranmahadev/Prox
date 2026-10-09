@@ -1,3 +1,4 @@
+import { useDroppable } from '@dnd-kit/core'
 import { IdeaCard } from './IdeaCard'
 import type { Idea } from '../../types/idea'
 import type { Pipeline, Stage } from '../../types/pipeline'
@@ -13,6 +14,11 @@ interface StageColumnProps {
 }
 
 export function StageColumn({ pipeline, stage, stageIndex, ideas, onOpenIdea, onArchiveIdea, onOpenStageGuide }: StageColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `${pipeline.id}:${stageIndex}`,
+    data: { pipelineId: pipeline.id, stageIndex },
+  })
+
   return (
     <div className="stagecol">
       <button
@@ -26,7 +32,7 @@ export function StageColumn({ pipeline, stage, stageIndex, ideas, onOpenIdea, on
         </b>
         <em>{ideas.length}</em>
       </button>
-      <div className="dropwell well">
+      <div ref={setNodeRef} className={`dropwell well${isOver ? ' over' : ''}`}>
         {stage.final && (
           <div className="outs">
             {pipeline.outputs.map((o) => (
