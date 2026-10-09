@@ -96,3 +96,31 @@ export function fileIcon(type: string): string {
 export function isPreviewable(type: string | undefined): boolean {
   return /^(image\/|text\/|audio\/|video\/)|pdf$/.test(type || '')
 }
+
+/** Open (preview) or download a stored file, ported from legacy's
+ * openFile() (lines 792-800). */
+export async function openStoredFile(
+  file: { key: string; name: string; type: string },
+  download: boolean,
+  onMissing?: () => void,
+): Promise<void> {
+  const win = !download && isPreviewable(file.type) ? window.open('', '_blank') : null
+  const blob = await fileStore.get(file.key)
+  if (!blob) {
+    win?.close()
+    onMissing?.()
+    return
+  }
+  const url = URL.createObjectURL(blob)
+  if (win) {
+    win.location.href = url
+  } else {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = file.name
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
+}

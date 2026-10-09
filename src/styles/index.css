@@ -2,6 +2,7 @@
 @import './tokens.css';
 @import './components.css';
 @import './idea-detail.css';
+@import './research.css';
 
 /* Map the CSS custom-property theme system onto Tailwind v4 utilities
    (bg-surface, text-muted, border-article, font-serif, ...). The variables

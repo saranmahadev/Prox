@@ -11,6 +11,8 @@ import { StageGuideView } from './StageGuideView'
 import { CaptureStageView } from './CaptureStageView'
 import { GenericChecklistStageView } from './GenericChecklistStageView'
 import { PublishedStageView } from './PublishedStageView'
+import { ResearchStageView } from './ResearchStageView'
+import { ResearchRecap } from './ResearchRecap'
 
 interface IdeaDetailPageProps {
   drawer: DrawerState | null
@@ -139,6 +141,8 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
             </div>
             {stage.id === 'capture' ? (
               <CaptureStageView idea={idea} onEdit={() => onEdit(idea.id)} />
+            ) : stage.id === 'research' ? (
+              <ResearchStageView idea={idea} />
             ) : stage.final ? (
               <PublishedStageView idea={idea} pipeline={pipeline} />
             ) : stage.checklist.length > 0 ? (
@@ -161,6 +165,7 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
                 <p className="text-muted">Nothing to check off at this stage yet.</p>
               </div>
             )}
+            {stageIndex > 1 && !stage.final && <ResearchRecap idea={idea} />}
           </section>
         </div>
         <footer className="dlg-foot">

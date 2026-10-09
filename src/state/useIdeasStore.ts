@@ -2,10 +2,11 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { createSeedIdeas, createSeedSeries } from '../data/seed'
 import { createIdea, type NewIdeaInput } from '../lib/ideaFactory'
-import { fileStore } from '../lib/fileStore'
+import { fileStore, MAX_FILE_SIZE } from '../lib/fileStore'
+import { uid } from '../lib/id'
 import { localStorageAdapter } from '../lib/storage'
 import { isDone, pipeOf, stageOf } from '../lib/selectors'
-import type { Idea, Series, StageStatus } from '../types/idea'
+import type { Idea, Research, Series, StageStatus } from '../types/idea'
 
 interface IdeasState {
   ideas: Idea[]
@@ -23,6 +24,24 @@ interface IdeasState {
 
   archiveIdea: (id: string) => void
   restoreIdea: (id: string) => void
+
+  addSourceLink: (ideaId: string, url: string, title: string) => void
+  addSourceDoc: (ideaId: string, title: string) => void
+  addSourceFiles: (ideaId: string, files: File[]) => Promise<{ added: number; skipped: number }>
+  removeSource: (ideaId: string, sourceId: string) => void
+  updateSourceNote: (ideaId: string, sourceId: string, note: string) => void
+  addInsight: (ideaId: string, text: string, sourceId: string | null) => void
+  removeInsight: (ideaId: string, insightId: string) => void
+  addQuestion: (ideaId: string, text: string) => void
+  removeQuestion: (ideaId: string, questionId: string) => void
+  setQuestionAnswered: (ideaId: string, questionId: string, answered: boolean) => void
+  updateQuestionAnswer: (ideaId: string, questionId: string, answer: string) => void
+}
+
+function updateResearch(set: (fn: (s: IdeasState) => Partial<IdeasState>) => void, ideaId: string, updater: (r: Research) => Research) {
+  set((s) => ({
+    ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, research: updater(i.research) } : i)),
+  }))
 }
 
 function blobKeysOf(idea: Idea): string[] {
@@ -126,6 +145,103 @@ export const useIdeasStore = create<IdeasState>()(
       restoreIdea: (id) => {
         set((s) => ({
           ideas: s.ideas.map((i) => (i.id === id ? { ...i, archived: false, archivedAt: null } : i)),
+        }))
+      },
+
+      addSourceLink: (ideaId, url, title) => {
+        updateResearch(set, ideaId, (r) => ({
+          ...r,
+          sources: [...r.sources, { id: uid(), kind: 'link', url, title, note: '', file: null }],
+          status: r.status === 'todo' ? 'doing' : r.status,
+        }))
+      },
+
+      addSourceDoc: (ideaId, title) => {
+        updateResearch(set, ideaId, (r) => ({
+          ...r,
+          sources: [...r.sources, { id: uid(), kind: 'doc', url: '', title, note: '', file: null }],
+          status: r.status === 'todo' ? 'doing' : r.status,
+        }))
+      },
+
+      addSourceFiles: async (ideaId, files) => {
+        let added = 0
+        let skipped = 0
+        for (const file of files) {
+          if (file.size > MAX_FILE_SIZE) {
+            skipped++
+            continue
+          }
+          const key = uid()
+          await fileStore.put(key, file)
+          updateResearch(set, ideaId, (r) => ({
+            ...r,
+            sources: [
+              ...r.sources,
+              {
+                id: uid(),
+                kind: 'doc',
+                url: '',
+                title: file.name,
+                note: '',
+                file: { key, name: file.name, size: file.size, type: file.type || '' },
+              },
+            ],
+            status: r.status === 'todo' ? 'doing' : r.status,
+          }))
+          added++
+        }
+        return { added, skipped }
+      },
+
+      removeSource: (ideaId, sourceId) => {
+        const idea = get().ideas.find((i) => i.id === ideaId)
+        const source = idea?.research.sources.find((s) => s.id === sourceId)
+        if (source?.file) void fileStore.del(source.file.key)
+        updateResearch(set, ideaId, (r) => ({
+          ...r,
+          sources: r.sources.filter((s) => s.id !== sourceId),
+          insights: r.insights.map((n) => (n.sourceId === sourceId ? { ...n, sourceId: null } : n)),
+        }))
+      },
+
+      updateSourceNote: (ideaId, sourceId, note) => {
+        updateResearch(set, ideaId, (r) => ({
+          ...r,
+          sources: r.sources.map((s) => (s.id === sourceId ? { ...s, note } : s)),
+        }))
+      },
+
+      addInsight: (ideaId, text, sourceId) => {
+        updateResearch(set, ideaId, (r) => ({ ...r, insights: [...r.insights, { id: uid(), text, sourceId }] }))
+      },
+
+      removeInsight: (ideaId, insightId) => {
+        updateResearch(set, ideaId, (r) => ({ ...r, insights: r.insights.filter((n) => n.id !== insightId) }))
+      },
+
+      addQuestion: (ideaId, text) => {
+        updateResearch(set, ideaId, (r) => ({
+          ...r,
+          questions: [...r.questions, { id: uid(), text, status: 'open', answer: '' }],
+        }))
+      },
+
+      removeQuestion: (ideaId, questionId) => {
+        updateResearch(set, ideaId, (r) => ({ ...r, questions: r.questions.filter((q) => q.id !== questionId) }))
+      },
+
+      setQuestionAnswered: (ideaId, questionId, answered) => {
+        updateResearch(set, ideaId, (r) => ({
+          ...r,
+          questions: r.questions.map((q) => (q.id === questionId ? { ...q, status: answered ? 'answered' : 'open' } : q)),
+        }))
+      },
+
+      updateQuestionAnswer: (ideaId, questionId, answer) => {
+        updateResearch(set, ideaId, (r) => ({
+          ...r,
+          questions: r.questions.map((q) => (q.id === questionId ? { ...q, answer } : q)),
         }))
       },
     }),
