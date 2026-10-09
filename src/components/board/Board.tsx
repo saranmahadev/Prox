@@ -14,7 +14,7 @@ interface BoardProps {
   onOpenIdea?: (id: string) => void
   onOpenStageGuide?: (pipelineId: PipelineId, stageIndex: number) => void
   onOpenArchive?: (pipelineId?: PipelineId) => void
-  onCapture?: (pipelineId?: string) => void
+  onCapture?: (pipelineId?: PipelineId) => void
 }
 
 export function Board({ onOpenIdea, onOpenStageGuide, onOpenArchive, onCapture }: BoardProps) {

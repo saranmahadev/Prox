@@ -15,6 +15,8 @@ export interface ArchiveViewState {
   sort: ArchiveSort
 }
 
+export type CaptureModalState = { mode: 'new'; pipelineId?: PipelineId } | { mode: 'edit'; ideaId: string }
+
 interface UiState {
   theme: Theme
   setTheme: (theme: Theme) => void
@@ -39,6 +41,11 @@ interface UiState {
   setArchiveFilter: (filter: 'all' | PipelineId) => void
   setArchiveQuery: (query: string) => void
   setArchiveSort: (sort: ArchiveSort) => void
+
+  captureModal: CaptureModalState | null
+  openCaptureNew: (pipelineId?: PipelineId) => void
+  openCaptureEdit: (ideaId: string) => void
+  closeCaptureModal: () => void
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined
@@ -93,6 +100,11 @@ export const useUiStore = create<UiState>()(
       setArchiveFilter: (filter) => set((s) => (s.archiveView ? { archiveView: { ...s.archiveView, filter } } : {})),
       setArchiveQuery: (query) => set((s) => (s.archiveView ? { archiveView: { ...s.archiveView, query } } : {})),
       setArchiveSort: (sort) => set((s) => (s.archiveView ? { archiveView: { ...s.archiveView, sort } } : {})),
+
+      captureModal: null,
+      openCaptureNew: (pipelineId) => set({ captureModal: { mode: 'new', pipelineId } }),
+      openCaptureEdit: (ideaId) => set({ captureModal: { mode: 'edit', ideaId } }),
+      closeCaptureModal: () => set({ captureModal: null }),
     }),
     {
       name: 'prox-ui-v1',

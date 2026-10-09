@@ -1,0 +1,56 @@
+/* Capture/edit idea modal styles, ported from legacy/index.html. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.field label,
+.field .lab {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.field input[type='text'],
+.field input[type='url'],
+.field input[type='date'],
+textarea {
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--border2);
+  border-radius: 0;
+  background: transparent;
+  font-size: 1rem;
+  transition: border-color 0.15s;
+}
+.field input[type='text']#fTitle {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+textarea {
+  min-height: 84px;
+  resize: vertical;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+.field input:focus,
+textarea:focus {
+  outline: 0;
+  border-color: var(--text);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}

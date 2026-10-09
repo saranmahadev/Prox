@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { JSONContent } from '@tiptap/core'
 import { createSeedIdeas, createSeedSeries } from '../data/seed'
-import { createIdea, type NewIdeaInput } from '../lib/ideaFactory'
+import { createChecklistState, createIdea, type NewIdeaInput } from '../lib/ideaFactory'
 import { fileStore, MAX_FILE_SIZE } from '../lib/fileStore'
 import { stripImageUrls } from '../lib/docImages'
 import { uid } from '../lib/id'
@@ -19,6 +19,10 @@ interface IdeasState {
 
   addIdea: (input: NewIdeaInput) => Idea
   updateIdea: (id: string, patch: Partial<Idea>) => void
+  /** Applies the capture-modal's edit fields; if the pipeline type changed,
+   * clamps the stage and resets checklist state for the new type (matches
+   * legacy's submit handler, lines 1524-1528). */
+  editIdeaFromCapture: (id: string, fields: NewIdeaInput) => void
   deleteIdea: (id: string) => void
 
   setChecklistItem: (ideaId: string, stageId: string, itemId: string, checked: boolean) => void
@@ -114,6 +118,30 @@ export const useIdeasStore = create<IdeasState>()(
 
       updateIdea: (id, patch) => {
         set((s) => ({ ideas: s.ideas.map((i) => (i.id === id ? { ...i, ...patch } : i)) }))
+      },
+
+      editIdeaFromCapture: (id, fields) => {
+        set((s) => ({
+          ideas: s.ideas.map((i) => {
+            if (i.id !== id) return i
+            const base = {
+              ...i,
+              title: fields.title,
+              summary: fields.summary ?? '',
+              link: fields.link ?? '',
+              tags: fields.tags ?? [],
+              priority: fields.priority ?? i.priority,
+            }
+            if (fields.type === i.type) return base
+            const pipeline = pipeOf({ ...i, type: fields.type })
+            return {
+              ...base,
+              type: fields.type,
+              stage: Math.min(i.stage, pipeline.stages.length - 1),
+              checklistState: createChecklistState(fields.type),
+            }
+          }),
+        }))
       },
 
       deleteIdea: (id) => {

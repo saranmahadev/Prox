@@ -17,7 +17,7 @@ interface PipelineSectionProps {
   onArchiveIdea?: (id: string) => void
   onOpenStageGuide?: (pipelineId: PipelineId, stageIndex: number) => void
   onOpenArchive?: (pipelineId: PipelineId) => void
-  onCapture?: (pipelineId: string) => void
+  onCapture?: (pipelineId: PipelineId) => void
 }
 
 export function PipelineSection({

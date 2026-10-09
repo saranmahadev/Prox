@@ -3,6 +3,7 @@ import { applyTheme, useUiStore } from './state/useUiStore'
 import { Board } from './components/board'
 import { IdeaDetailPage } from './components/idea-detail/IdeaDetailPage'
 import { ArchivePage } from './components/archive/ArchivePage'
+import { CaptureModal } from './components/capture/CaptureModal'
 import { Toast } from './components/ui'
 
 function App() {
@@ -11,6 +12,8 @@ function App() {
   const openIdea = useUiStore((s) => s.openIdea)
   const openGuide = useUiStore((s) => s.openGuide)
   const openArchive = useUiStore((s) => s.openArchive)
+  const openCaptureNew = useUiStore((s) => s.openCaptureNew)
+  const openCaptureEdit = useUiStore((s) => s.openCaptureEdit)
 
   useEffect(() => {
     applyTheme(theme)
@@ -18,9 +21,10 @@ function App() {
 
   return (
     <>
-      <Board onOpenIdea={openIdea} onOpenStageGuide={openGuide} onOpenArchive={openArchive} />
-      <IdeaDetailPage drawer={drawer} onEdit={() => {}} />
+      <Board onOpenIdea={openIdea} onOpenStageGuide={openGuide} onOpenArchive={openArchive} onCapture={openCaptureNew} />
+      <IdeaDetailPage drawer={drawer} onEdit={openCaptureEdit} />
       <ArchivePage />
+      <CaptureModal />
       <Toast />
     </>
   )
