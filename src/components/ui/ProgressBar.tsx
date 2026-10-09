@@ -8,7 +8,7 @@ interface ProgressBarProps {
 export function ProgressBar({ frac, color }: ProgressBarProps) {
   const style = (color ? { '--c': color } : undefined) as CSSProperties | undefined
   return (
-    <div className="bar" style={style}>
+    <div className="bar" style={style} aria-hidden="true">
       <i style={{ width: `${Math.round(Math.max(0, Math.min(1, frac)) * 100)}%` }} />
     </div>
   )
