@@ -1,11 +1,11 @@
 import { useDroppable } from '@dnd-kit/core'
 import type { Idea } from '../../types/idea'
-import type { Pipeline } from '../../types/pipeline'
+import type { Pipeline, PipelineId } from '../../types/pipeline'
 
 interface ArchiveFolderWidgetProps {
   pipeline: Pipeline
   archivedIdeas: Idea[]
-  onOpen?: (pipelineId: string) => void
+  onOpen?: (pipelineId: PipelineId) => void
 }
 
 export function ArchiveFolderWidget({ pipeline, archivedIdeas, onOpen }: ArchiveFolderWidgetProps) {

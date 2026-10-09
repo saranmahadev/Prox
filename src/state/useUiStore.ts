@@ -1,12 +1,19 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { PipelineId } from '../types/pipeline'
+import type { ArchiveSort } from '../types/idea'
 
 export type Theme = 'light' | 'dark' | null
 
 export type DrawerState =
   | { mode: 'idea'; ideaId: string }
   | { mode: 'guide'; pipelineId: PipelineId; stageIndex: number }
+
+export interface ArchiveViewState {
+  filter: 'all' | PipelineId
+  query: string
+  sort: ArchiveSort
+}
 
 interface UiState {
   theme: Theme
@@ -25,6 +32,13 @@ interface UiState {
 
   focusMode: boolean
   toggleFocusMode: () => void
+
+  archiveView: ArchiveViewState | null
+  openArchive: (pipelineId?: PipelineId) => void
+  closeArchive: () => void
+  setArchiveFilter: (filter: 'all' | PipelineId) => void
+  setArchiveQuery: (query: string) => void
+  setArchiveSort: (sort: ArchiveSort) => void
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined
@@ -72,6 +86,13 @@ export const useUiStore = create<UiState>()(
 
       focusMode: false,
       toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+
+      archiveView: null,
+      openArchive: (pipelineId) => set({ archiveView: { filter: pipelineId ?? 'all', query: '', sort: 'new' } }),
+      closeArchive: () => set({ archiveView: null }),
+      setArchiveFilter: (filter) => set((s) => (s.archiveView ? { archiveView: { ...s.archiveView, filter } } : {})),
+      setArchiveQuery: (query) => set((s) => (s.archiveView ? { archiveView: { ...s.archiveView, query } } : {})),
+      setArchiveSort: (sort) => set((s) => (s.archiveView ? { archiveView: { ...s.archiveView, sort } } : {})),
     }),
     {
       name: 'prox-ui-v1',

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { applyTheme, useUiStore } from './state/useUiStore'
 import { Board } from './components/board'
 import { IdeaDetailPage } from './components/idea-detail/IdeaDetailPage'
+import { ArchivePage } from './components/archive/ArchivePage'
 import { Toast } from './components/ui'
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
   const drawer = useUiStore((s) => s.drawer)
   const openIdea = useUiStore((s) => s.openIdea)
   const openGuide = useUiStore((s) => s.openGuide)
+  const openArchive = useUiStore((s) => s.openArchive)
 
   useEffect(() => {
     applyTheme(theme)
@@ -16,8 +18,9 @@ function App() {
 
   return (
     <>
-      <Board onOpenIdea={openIdea} onOpenStageGuide={openGuide} />
+      <Board onOpenIdea={openIdea} onOpenStageGuide={openGuide} onOpenArchive={openArchive} />
       <IdeaDetailPage drawer={drawer} onEdit={() => {}} />
+      <ArchivePage />
       <Toast />
     </>
   )

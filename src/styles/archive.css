@@ -1,0 +1,146 @@
+/* Archive full-page view styles, ported from legacy/index.html. The base
+   .arc-tools/.arc-sec/.arc-grid/.arc-card/.arc-empty rules already live in
+   board.css (they were ported alongside the board's archive-folder
+   widget); this file has the full-page-specific layout on top. */
+
+.arc-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 40px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  flex: none;
+}
+.arc-top .ttl {
+  flex: 1;
+  min-width: 180px;
+}
+.arc-top h2 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+.sel {
+  padding: 0.42rem 2rem 0.42rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.arc-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+}
+.arc-side {
+  border-right: 1px solid var(--border);
+  padding: 28px 20px;
+  overflow: auto;
+  background: var(--surface2);
+}
+.arc-side .big {
+  font-family: var(--serif);
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.arc-side small {
+  color: var(--muted);
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 22px;
+}
+.arc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.arc-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.92rem;
+  border-left: 3px solid transparent;
+}
+.arc-nav button:hover {
+  background: var(--bg);
+}
+.arc-nav button[aria-pressed='true'] {
+  background: var(--bg);
+  border-left-color: var(--c, var(--text));
+  font-weight: 600;
+}
+.arc-nav em {
+  margin-left: auto;
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.arc-main {
+  overflow: auto;
+  padding: 12px 44px 70px;
+}
+.arc-main .arc-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.arc-main .arc-card {
+  padding: 18px 18px 16px;
+  gap: 10px;
+}
+.arc-main .arc-card h4 {
+  font-size: 1.2rem;
+}
+.ac-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.arc-main .arc-card .when {
+  margin-left: 0;
+}
+@media (max-width: 820px) {
+  .arc-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .arc-side {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+  .arc-side .big,
+  .arc-side small {
+    display: none;
+  }
+  .arc-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .arc-nav button {
+    flex: none;
+    width: auto;
+    border-left: 0;
+    border-bottom: 3px solid transparent;
+  }
+  .arc-nav button[aria-pressed='true'] {
+    border-bottom-color: var(--c, var(--text));
+  }
+  .arc-top {
+    padding: 12px 16px;
+  }
+  .arc-main {
+    padding: 8px 16px 60px;
+  }
+}

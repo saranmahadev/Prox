@@ -13,7 +13,7 @@ import { PipelineSection } from './PipelineSection'
 interface BoardProps {
   onOpenIdea?: (id: string) => void
   onOpenStageGuide?: (pipelineId: PipelineId, stageIndex: number) => void
-  onOpenArchive?: (pipelineId?: string) => void
+  onOpenArchive?: (pipelineId?: PipelineId) => void
   onCapture?: (pipelineId?: string) => void
 }
 

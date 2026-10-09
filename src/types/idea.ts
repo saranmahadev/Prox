@@ -17,6 +17,8 @@ export type StageStatus = (typeof STAGE_STATUS_STEPS)[number][0]
 
 export type Priority = 'high' | 'med' | 'low'
 
+export type ArchiveSort = 'new' | 'old' | 'az' | 'pri'
+
 /** A single checklist item with a stable id (not a positional index - see
  * the plan's note on why the legacy `checks[stageId] = [bool, bool, ...]`
  * positional array is fragile). */

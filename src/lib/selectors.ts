@@ -1,6 +1,6 @@
 import { getPipeline } from '../data/pipelines'
 import { STAGE_STATUS_STEPS } from '../types/idea'
-import type { Idea, StageStatus } from '../types/idea'
+import type { ArchiveSort, Idea, StageStatus } from '../types/idea'
 import type { Pipeline, Stage } from '../types/pipeline'
 import { TOOL_STAGE_IDS } from '../types/pipeline'
 
@@ -77,4 +77,14 @@ export function matchesQuery(idea: Idea, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
   return `${idea.title} ${idea.summary} ${idea.tags.join(' ')}`.toLowerCase().includes(q)
+}
+
+const PRIORITY_ORDER = ['high', 'med', 'low']
+
+/** Ported from legacy's ARC_SORT (lines 1951-1956). */
+export const ARCHIVE_SORTERS: Record<ArchiveSort, (a: Idea, b: Idea) => number> = {
+  new: (a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0),
+  old: (a, b) => (a.archivedAt ?? 0) - (b.archivedAt ?? 0),
+  az: (a, b) => a.title.localeCompare(b.title),
+  pri: (a, b) => PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority),
 }
