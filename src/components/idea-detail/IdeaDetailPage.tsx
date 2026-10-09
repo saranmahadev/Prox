@@ -1,11 +1,10 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { PRIORITY_LABELS, getPipeline } from '../../data/pipelines'
-import { guideFor } from '../../data/guides'
-import { isDone, isStatusTrackedStage, pipeOf, progress, stageOf, stageStatusOf } from '../../lib/selectors'
+import { isDone, pipeOf, progress, stageOf } from '../../lib/selectors'
 import { useIdeasStore } from '../../state/useIdeasStore'
 import { useUiStore, type DrawerState } from '../../state/useUiStore'
 import type { PipelineId } from '../../types/pipeline'
-import { DrawerShell, ProgressRing, StatusTracker } from '../ui'
+import { DrawerShell, ProgressRing } from '../ui'
 import { StageRail } from './StageRail'
 import { StageGuideView } from './StageGuideView'
 import { CaptureStageView } from './CaptureStageView'
@@ -13,8 +12,11 @@ import { GenericChecklistStageView } from './GenericChecklistStageView'
 import { PublishedStageView } from './PublishedStageView'
 import { ResearchStageView } from './ResearchStageView'
 import { ResearchRecap } from './ResearchRecap'
+import { ArticleRecap } from './ArticleRecap'
 import { DraftEditorView } from './DraftEditorView'
 import { OutlineEditorView } from './OutlineEditorView'
+import { MetaBuilderView } from './MetaBuilderView'
+import { DistributeView } from './DistributeView'
 
 interface IdeaDetailPageProps {
   drawer: DrawerState | null
@@ -29,7 +31,6 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
 
   const ideas = useIdeasStore((s) => s.ideas)
   const setChecklistItem = useIdeasStore((s) => s.setChecklistItem)
-  const setStageStatus = useIdeasStore((s) => s.setStageStatus)
   const advanceStage = useIdeasStore((s) => s.advanceStage)
   const goBackStage = useIdeasStore((s) => s.goBackStage)
   const goToStage = useIdeasStore((s) => s.goToStage)
@@ -150,6 +151,10 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
               <OutlineEditorView idea={idea} />
             ) : stage.id === 'a-draft' ? (
               <DraftEditorView idea={idea} />
+            ) : stage.id === 'a-meta' ? (
+              <MetaBuilderView idea={idea} pipeline={pipeline} />
+            ) : stage.id === 'a-distribute' ? (
+              <DistributeView idea={idea} />
             ) : stage.final ? (
               <PublishedStageView idea={idea} pipeline={pipeline} />
             ) : stage.checklist.length > 0 ? (
@@ -157,15 +162,6 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
                 items={idea.checklistState[stage.id] ?? []}
                 onToggle={(itemId, checked) => setChecklistItem(idea.id, stage.id, itemId, checked)}
               />
-            ) : isStatusTrackedStage(stage.id) ? (
-              <div className="blk">
-                <StatusTracker
-                  status={stageStatusOf(idea, stage.id)}
-                  onChange={(status) => setStageStatus(idea.id, stage.id, status)}
-                  color={`var(--${pipeline.color})`}
-                />
-                {guideFor(stage)}
-              </div>
             ) : (
               <div className="blk">
                 <h5>Checklist · 0/0</h5>
@@ -173,6 +169,10 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
               </div>
             )}
             {stageIndex > 1 && !stage.final && <ResearchRecap idea={idea} />}
+            {(() => {
+              const metaIndex = pipeline.stages.findIndex((s) => s.id === 'a-meta')
+              return !stage.final && metaIndex >= 0 && stageIndex > metaIndex && <ArticleRecap idea={idea} />
+            })()}
           </section>
         </div>
         <footer className="dlg-foot">

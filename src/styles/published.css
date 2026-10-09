@@ -1,0 +1,132 @@
+/* Published-stage article recap styles, ported from legacy/index.html. */
+
+.pub-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 28px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+.pub-sec a,
+.rs-s a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--border2);
+  text-underline-offset: 3px;
+}
+.pub-toc a {
+  padding: 5px 12px;
+  border: 1px solid var(--border2);
+  border-radius: 99px;
+  font-size: 0.84rem;
+  color: var(--text);
+  text-decoration: none;
+}
+.pub-toc a:hover {
+  border-color: var(--text);
+}
+.pub-article {
+  max-width: 700px;
+  margin: 0 auto 56px;
+}
+.pub-cover img {
+  width: 100%;
+  max-height: 380px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 0 0 24px;
+}
+.pub-h {
+  font-size: 2.6rem !important;
+  line-height: 1.15;
+  margin: 0 0 0.3em !important;
+}
+.pub-sub {
+  font-size: 1.4rem;
+  color: var(--muted);
+  margin: 0 0 0.8em !important;
+  line-height: 1.4;
+}
+.pub-by {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0 0 2em;
+  padding-bottom: 1.2em;
+  border-bottom: 1px solid var(--border);
+}
+.pub-article img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.pub-sec {
+  margin: 0 0 44px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.pub-sec h4 {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+}
+.pub-sec h6 {
+  margin: 20px 0 6px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pub-kv {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  margin: 0;
+}
+.pub-kv dt,
+.pub-kv dd {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+}
+.pub-kv dt {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pub-kv dd {
+  overflow-wrap: anywhere;
+}
+.ro-tree b {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-right: 6px;
+}
+.pub-stage {
+  margin-bottom: 14px;
+}
+.pub-stage h6 {
+  margin: 0 0 4px;
+}
+.ro-tree {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.ro-tree li {
+  padding: 3px 0 3px calc(var(--d, 0) * 20px);
+  font-size: 0.92rem;
+}
+.ro-tree li::before {
+  content: '–';
+  margin-right: 8px;
+  color: var(--muted);
+}
+.ro-cover img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 10px 0;
+}

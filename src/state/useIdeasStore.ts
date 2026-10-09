@@ -8,7 +8,8 @@ import { stripImageUrls } from '../lib/docImages'
 import { uid } from '../lib/id'
 import { debounced, localStorageAdapter } from '../lib/storage'
 import { isDone, pipeOf, stageOf } from '../lib/selectors'
-import type { Idea, Research, Series, StageStatus } from '../types/idea'
+import type { ArticleMeta, ChannelDist, Distribution, Idea, Research, Series, StageStatus } from '../types/idea'
+import { createEmptyArticleMeta, createEmptyDistribution } from '../lib/ideaFactory'
 
 const ideasStorage = debounced(localStorageAdapter)
 
@@ -45,11 +46,43 @@ interface IdeasState {
   removeQuestion: (ideaId: string, questionId: string) => void
   setQuestionAnswered: (ideaId: string, questionId: string, answered: boolean) => void
   updateQuestionAnswer: (ideaId: string, questionId: string, answer: string) => void
+
+  addTag: (ideaId: string, tag: string) => void
+  removeTag: (ideaId: string, tag: string) => void
+
+  addSeries: (name: string) => Series
+  updateSeriesName: (seriesId: string, name: string) => void
+  updateSeriesDesc: (seriesId: string, desc: string) => void
+  deleteSeries: (seriesId: string) => void
+  setIdeaSeries: (ideaId: string, seriesId: string | null) => void
+  setIdeaPart: (ideaId: string, part: number | null) => void
+  reorderSeriesMembers: (seriesId: string, orderedIdeaIds: string[]) => void
+
+  updateMeta: (ideaId: string, patch: Partial<ArticleMeta>) => void
+  setCoverFile: (ideaId: string, file: File) => Promise<void>
+  setCoverFromBlob: (ideaId: string, blob: Blob) => Promise<void>
+
+  setChannelStatus: (ideaId: string, channel: string, status: ChannelDist['status']) => void
+  setChannelField: (ideaId: string, channel: string, field: 'url' | 'date', value: string) => void
+  addRepurpose: (ideaId: string, text: string) => void
+  removeRepurpose: (ideaId: string, index: number) => void
 }
 
 function updateResearch(set: (fn: (s: IdeasState) => Partial<IdeasState>) => void, ideaId: string, updater: (r: Research) => Research) {
   set((s) => ({
     ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, research: updater(i.research) } : i)),
+  }))
+}
+
+function updateMetaFn(set: (fn: (s: IdeasState) => Partial<IdeasState>) => void, ideaId: string, updater: (m: ArticleMeta) => ArticleMeta) {
+  set((s) => ({
+    ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, meta: updater(i.meta ?? createEmptyArticleMeta()) } : i)),
+  }))
+}
+
+function updateDistFn(set: (fn: (s: IdeasState) => Partial<IdeasState>) => void, ideaId: string, updater: (d: Distribution) => Distribution) {
+  set((s) => ({
+    ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, dist: updater(i.dist ?? createEmptyDistribution()) } : i)),
   }))
 }
 
@@ -270,6 +303,111 @@ export const useIdeasStore = create<IdeasState>()(
           ...r,
           questions: r.questions.map((q) => (q.id === questionId ? { ...q, answer } : q)),
         }))
+      },
+
+      addTag: (ideaId, tag) => {
+        set((s) => ({
+          ideas: s.ideas.map((i) => (i.id === ideaId && !i.tags.includes(tag) && i.tags.length < 12 ? { ...i, tags: [...i.tags, tag] } : i)),
+        }))
+        get().touchStage(ideaId, 'a-meta')
+      },
+
+      removeTag: (ideaId, tag) => {
+        set((s) => ({
+          ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, tags: i.tags.filter((t) => t !== tag) } : i)),
+        }))
+      },
+
+      addSeries: (name) => {
+        const series: Series = { id: uid(), name, desc: '' }
+        set((s) => ({ series: [...s.series, series] }))
+        return series
+      },
+
+      updateSeriesName: (seriesId, name) => {
+        set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, name } : ser)) }))
+      },
+
+      updateSeriesDesc: (seriesId, desc) => {
+        set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, desc } : ser)) }))
+      },
+
+      deleteSeries: (seriesId) => {
+        set((s) => ({
+          series: s.series.filter((ser) => ser.id !== seriesId),
+          ideas: s.ideas.map((i) => (i.meta?.seriesId === seriesId ? { ...i, meta: { ...i.meta!, seriesId: null, part: null } } : i)),
+        }))
+      },
+
+      setIdeaSeries: (ideaId, seriesId) => {
+        const members = seriesId ? get().ideas.filter((i) => i.meta?.seriesId === seriesId && i.id !== ideaId) : []
+        updateMetaFn(set, ideaId, (m) => ({ ...m, seriesId, part: seriesId && !m.part ? members.length + 1 : m.part }))
+        get().touchStage(ideaId, 'a-meta')
+      },
+
+      setIdeaPart: (ideaId, part) => {
+        updateMetaFn(set, ideaId, (m) => ({ ...m, part }))
+      },
+
+      reorderSeriesMembers: (_seriesId, orderedIdeaIds) => {
+        set((s) => ({
+          ideas: s.ideas.map((i) => {
+            const part = orderedIdeaIds.indexOf(i.id)
+            return part >= 0 && i.meta ? { ...i, meta: { ...i.meta, part: part + 1 } } : i
+          }),
+        }))
+      },
+
+      updateMeta: (ideaId, patch) => {
+        updateMetaFn(set, ideaId, (m) => ({ ...m, ...patch }))
+        get().touchStage(ideaId, 'a-meta')
+      },
+
+      setCoverFile: async (ideaId, file) => {
+        if (file.size > MAX_FILE_SIZE) return
+        const key = uid()
+        await fileStore.put(key, file)
+        const idea = get().ideas.find((i) => i.id === ideaId)
+        if (idea?.meta?.cover) void fileStore.del(idea.meta.cover.key)
+        updateMetaFn(set, ideaId, (m) => ({ ...m, cover: { key }, coverUrl: '' }))
+        get().touchStage(ideaId, 'a-meta')
+      },
+
+      setCoverFromBlob: async (ideaId, blob) => {
+        const key = uid()
+        await fileStore.put(key, blob)
+        const idea = get().ideas.find((i) => i.id === ideaId)
+        if (idea?.meta?.cover) void fileStore.del(idea.meta.cover.key)
+        updateMetaFn(set, ideaId, (m) => ({ ...m, cover: { key }, coverUrl: '' }))
+        get().touchStage(ideaId, 'a-meta')
+      },
+
+      setChannelStatus: (ideaId, channel, status) => {
+        updateDistFn(set, ideaId, (d) => ({
+          ...d,
+          channels: { ...d.channels, [channel]: { ...(d.channels[channel] ?? { status: 'todo', url: '', date: '' }), status } },
+        }))
+        get().touchStage(ideaId, 'a-distribute')
+      },
+
+      setChannelField: (ideaId, channel, field, value) => {
+        updateDistFn(set, ideaId, (d) => ({
+          ...d,
+          channels: {
+            ...d.channels,
+            [channel]: { ...(d.channels[channel] ?? { status: 'todo', url: '', date: '' }), [field]: value },
+          },
+        }))
+        get().touchStage(ideaId, 'a-distribute')
+      },
+
+      addRepurpose: (ideaId, text) => {
+        updateDistFn(set, ideaId, (d) => ({ ...d, repurpose: [...d.repurpose, text] }))
+        get().touchStage(ideaId, 'a-distribute')
+      },
+
+      removeRepurpose: (ideaId, index) => {
+        updateDistFn(set, ideaId, (d) => ({ ...d, repurpose: d.repurpose.filter((_, i) => i !== index) }))
       },
     }),
     {

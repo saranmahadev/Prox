@@ -65,6 +65,14 @@ export function archivedIdeas(ideas: Idea[]): Idea[] {
   return ideas.filter((i) => i.archived)
 }
 
+/** Ported from legacy's inSeries(): other articles in the same series,
+ * ordered by part. */
+export function seriesMembers(ideas: Idea[], seriesId: string): Idea[] {
+  return ideas
+    .filter((i) => i.type === 'article' && i.meta?.seriesId === seriesId)
+    .sort((a, b) => (a.meta!.part ?? 999) - (b.meta!.part ?? 999) || a.title.localeCompare(b.title))
+}
+
 export function matchesQuery(idea: Idea, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
