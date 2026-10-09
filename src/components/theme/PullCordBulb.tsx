@@ -13,30 +13,44 @@ import { useUiStore } from '../../state/useUiStore'
  *
  * This version models the whole thing as two coupled, continuously
  * integrated damped oscillators instead:
- *  - `angle`: a pendulum (the bulb swinging side to side about its mount)
+ *  - `angle`: a real pendulum (the bulb swinging side to side about its
+ *    mount), using the actual sin(angle) restoring force, not a linear
+ *    approximation, so larger swings ease near the top the way a real
+ *    weight on a cord does
  *  - `stretch`: a spring (the cord elongating when pulled down)
- * Both are driven by the same rAF loop at all times, including a tiny
- * random forcing term so it never looks like a fixed loop at rest. Drags
+ * Both run continuously, including a slow, smoothed "wind" term (an
+ * Ornstein-Uhlenbeck-style random walk, not raw per-frame noise - raw
+ * noise reads as jitter, a slowly-drifting bias reads as air currents)
+ * so it's never perfectly still but also never on a fixed loop. Drags
  * manipulate angle/stretch directly; releases hand off real velocity
- * (estimated from recent pointer samples) into the free simulation, so a
- * fast flick swings harder than a slow drag to the same position, and a
- * plain click/keyboard toggle gives a believable randomized-direction
- * kick that decays through the same physics rather than a canned curve.
+ * (a smoothed average of recent pointer samples, not just the last
+ * frame's delta, so the handoff from "held" to "free" doesn't jump) into
+ * the free simulation - a fast flick swings harder than a slow drag to
+ * the same position, and a plain click/keyboard toggle gives a modest
+ * randomized-direction kick that decays through the same physics rather
+ * than a canned curve.
+ *
+ * The period is tuned to ~1.2s (a real cord this length swings roughly
+ * once a second, not several times a second - the first version's
+ * stiffness constant was about 8x too high, which is what made it feel
+ * like a tight toy spring instead of a heavy hanging lamp).
  */
 
-const ANGLE_STIFFNESS = 0.06
-const ANGLE_DAMPING = 0.985
-const STRETCH_STIFFNESS = 0.22
-const STRETCH_DAMPING = 0.82
-const AMBIENT_TORQUE = 0.01 // tiny random perturbation each frame - keeps it quietly "alive" at rest
-const MAX_DRAG_ANGLE = 26 // degrees, while actively dragging sideways
+const ANGLE_STIFFNESS = 0.0076 // tuned for a ~1.2s swing period at 60fps
+const ANGLE_DAMPING = 0.993 // several visible swings before settling (~6-7s)
+const STRETCH_STIFFNESS = 0.16
+const STRETCH_DAMPING = 0.85
+const WIND_DAMPING = 0.985 // how persistent the ambient "wind" bias is frame to frame
+const WIND_JITTER = 0.00035 // how much the wind can shift per frame - deliberately tiny
+const MAX_DRAG_ANGLE = 24 // degrees, while actively dragging sideways
 const MAX_DRAG_X = 40 // px of horizontal drag mapped to MAX_DRAG_ANGLE
 const MAX_PULL = 30 // px of vertical drag
 const FIRE_PULL_THRESHOLD = 12 // px - pulling the cord down past this fires the toggle
 const CLICK_TUG = 22 // px - the stretch a plain click/keyboard tug simulates
-const FLICK_TO_ANGVEL = 10 // px/ms horizontal release velocity -> deg/frame angular velocity
+const FLICK_TO_ANGVEL = 2.4 // px/ms horizontal release velocity -> deg/frame angular velocity
 const FLICK_TO_STRETCHVEL = 6 // px/ms vertical release velocity -> px/frame stretch velocity
-const SETTLE_EPS = 0.02
+const VELOCITY_SMOOTHING = 0.35 // EMA weight for new samples when tracking release velocity
+const SETTLE_EPS = 0.015
 
 interface DragState {
   startX: number
@@ -59,7 +73,7 @@ export function PullCordBulb() {
   const cordRef = useRef<SVGPathElement>(null)
   const handleRef = useRef<SVGRectElement>(null)
 
-  const physics = useRef({ angle: 0, angVel: 0, stretch: 0, stretchVel: 0 })
+  const physics = useRef({ angle: 0, angVel: 0, stretch: 0, stretchVel: 0, wind: 0 })
   const drag = useRef<DragState | null>(null)
   const reduceMotion = useRef(false)
 
@@ -79,9 +93,12 @@ export function PullCordBulb() {
   }
 
   function kick(strength = 1) {
+    // Sized so the resulting swing amplitude lands around 8-12 degrees at
+    // strength=1 - a visible nudge, not a wild spin (amplitude ~= angVel /
+    // angular frequency, and the frequency is deliberately low now).
     const dir = Math.random() > 0.5 ? 1 : -1
-    physics.current.angVel += dir * (3.2 + Math.random() * 1.4) * strength
-    physics.current.stretchVel += 2.5 * strength
+    physics.current.angVel += dir * (0.65 + Math.random() * 0.25) * strength
+    physics.current.stretchVel += 2.2 * strength
   }
 
   useEffect(() => {
@@ -93,9 +110,13 @@ export function PullCordBulb() {
     const step = () => {
       const p = physics.current
       if (!drag.current) {
-        const ambient = (Math.random() - 0.5) * AMBIENT_TORQUE
-        const angAccel = -ANGLE_STIFFNESS * p.angle + ambient
-        p.angVel = (p.angVel + angAccel) * ANGLE_DAMPING
+        // Slowly-drifting ambient bias (not fresh noise every frame) -
+        // reads as faint air currents rather than vibration.
+        p.wind = p.wind * WIND_DAMPING + (Math.random() - 0.5) * WIND_JITTER
+
+        const angleRad = (p.angle * Math.PI) / 180
+        const restoring = -ANGLE_STIFFNESS * Math.sin(angleRad) * (180 / Math.PI)
+        p.angVel = (p.angVel + restoring + p.wind) * ANGLE_DAMPING
         p.angle += p.angVel
 
         const stretchAccel = -STRETCH_STIFFNESS * p.stretch
@@ -147,8 +168,13 @@ export function PullCordBulb() {
       const t = performance.now()
       const dt = t - d.lastT
       if (dt > 0) {
-        d.vx = (e.clientX - d.lastX) / dt
-        d.vy = (e.clientY - d.lastY) / dt
+        // Smoothed (EMA) rather than the raw last-frame delta, so a brief
+        // pause right before release doesn't zero out an otherwise fast
+        // flick, and the handoff into free physics doesn't jump.
+        const rawVx = (e.clientX - d.lastX) / dt
+        const rawVy = (e.clientY - d.lastY) / dt
+        d.vx = d.vx * (1 - VELOCITY_SMOOTHING) + rawVx * VELOCITY_SMOOTHING
+        d.vy = d.vy * (1 - VELOCITY_SMOOTHING) + rawVy * VELOCITY_SMOOTHING
       }
       d.lastX = e.clientX
       d.lastY = e.clientY
@@ -211,33 +237,17 @@ export function PullCordBulb() {
         onPointerUp={() => release(false)}
         onPointerCancel={() => release(true)}
       >
-        <defs>
-          <radialGradient id="bulbGlow">
-            <stop offset="0" stopColor="#ffe27a" stopOpacity=".85" />
-            <stop offset="1" stopColor="#ffe27a" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="bulbFill" cx=".38" cy=".35" r=".75">
-            <stop offset="0" stopColor="#fff6c4" />
-            <stop offset="1" stopColor="#ffc83d" />
-          </radialGradient>
-          <linearGradient id="bulbBase" x1="0" x2="1">
-            <stop offset="0" stopColor="#8d8d8d" />
-            <stop offset=".45" stopColor="#d9d9d9" />
-            <stop offset="1" stopColor="#7c7c7c" />
-          </linearGradient>
-        </defs>
         <g className="swing" ref={swingRef}>
-          <circle className="glow" cx="30" cy="72" r="46" fill="url(#bulbGlow)" />
+          <circle className="glow" cx="30" cy="72" r="46" />
           <line className="wire" x1="30" y1="0" x2="30" y2="20" />
           <path className="cord" ref={cordRef} d="M37 26 H52 V116" />
           <rect className="hit holder" x="23" y="19" width="14" height="11" rx="2.5" />
           <g className="hit base">
-            <path d="M24.5 30 H35.5 L36 46 Q36 49 33 49 H27 Q24 49 24 46 Z" fill="url(#bulbBase)" />
+            <path fill="var(--surface2)" stroke="var(--border2)" strokeWidth="1" d="M24.5 30 H35.5 L36 46 Q36 49 33 49 H27 Q24 49 24 46 Z" />
             <path className="ridge" d="M24.5 34.5 H35.5 M24.3 38.5 H35.7 M24.2 42.5 H35.8" />
           </g>
           <path className="hit glass" d="M25.5 48 C25.5 55 14 57 14 71 C14 84 22 92 30 92 C38 92 46 84 46 71 C46 57 34.5 55 34.5 48 Z" />
           <path className="support" d="M28.2 49 V63 M31.8 49 V63 M28.2 63 Q30 67 31.8 63" />
-          <path className="shine" d="M20 70 C20 64 23 60 27.5 58.5" />
           <rect className="hit pad" x="42" y="104" width="20" height="44" fill="transparent" />
           <rect className="hit handle" ref={handleRef} x="49" y="116" width="6" height="13" rx="3" />
         </g>

@@ -37,70 +37,56 @@
 .bulb .swing {
   transform-origin: 30px 0;
 }
+/* Re-skinned in the app's own tokens instead of a skeuomorphic amber/grey
+   illustration - flat fills, hairline strokes, and the "lit" glow tied to
+   --accent (the same green used for every other active/pressed state in
+   the app), so it reads as native UI rather than a dropped-in graphic. */
 .bulb .wire {
-  stroke: var(--muted);
+  stroke: var(--border2);
   stroke-width: 2;
 }
 .bulb .cord {
   fill: none;
-  stroke: var(--muted);
+  stroke: var(--border2);
   stroke-width: 1.6;
   stroke-dasharray: 2 2;
 }
 .bulb .holder {
-  fill: #4a4a4a;
+  fill: var(--muted);
 }
 .bulb .ridge {
   fill: none;
-  stroke: #6b6b6b;
+  stroke: var(--border2);
   stroke-width: 1.1;
   stroke-linecap: round;
 }
 .bulb .glass {
-  fill: url(#bulbFill);
-  stroke: #d9a620;
+  fill: var(--surface);
+  stroke: var(--accent);
   stroke-width: 1.4;
-  filter: drop-shadow(0 0 8px rgba(255, 205, 70, 0.9));
-  transition: stroke 0.25s;
+  transition: fill 0.25s, stroke 0.25s;
 }
 .bulb .support {
   fill: none;
-  stroke: #b8860b;
+  stroke: var(--muted);
   stroke-width: 1.1;
   stroke-linecap: round;
-  opacity: 0.55;
-}
-.bulb .shine {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  opacity: 0.75;
+  opacity: 0.5;
 }
 .bulb .glow {
-  opacity: 0.9;
+  fill: var(--accent);
+  opacity: 0.22;
   transition: opacity 0.3s;
 }
 .bulb .handle {
   fill: var(--text);
 }
 :root[data-theme='dark'] .bulb .glass {
-  fill: #2a2a2d;
-  stroke: #6a6a70;
-  filter: none;
-}
-:root[data-theme='dark'] .bulb .support {
-  stroke: #8a8a90;
-  opacity: 0.5;
-}
-:root[data-theme='dark'] .bulb .shine {
-  opacity: 0.28;
+  fill: var(--surface2);
+  stroke: var(--border2);
 }
 :root[data-theme='dark'] .bulb .glow {
   opacity: 0;
-}
-:root[data-theme='dark'] .bulb .holder {
-  fill: #8a8a90;
 }
 @media (max-width: 640px) {
   .bulb {
