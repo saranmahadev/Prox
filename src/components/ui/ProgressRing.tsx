@@ -21,7 +21,7 @@ export function ProgressRing({ frac, size = 64, strokeWidth = 9, color, label, c
   const style = { '--s': `${size}px`, ...(color ? { '--c': color } : {}) } as CSSProperties
 
   return (
-    <div className={`ring${className ? ` ${className}` : ''}`} style={style} role="img" aria-label={label ?? `${pct}% complete`}>
+    <div className={`p-ring${className ? ` ${className}` : ''}`} style={style} role="img" aria-label={label ?? `${pct}% complete`}>
       <svg viewBox={`0 0 ${size} ${size}`}>
         <circle className="bg" cx={size / 2} cy={size / 2} r={r} strokeWidth={strokeWidth} />
         <circle
