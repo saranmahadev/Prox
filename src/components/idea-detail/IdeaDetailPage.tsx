@@ -100,8 +100,14 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
   }
 
   return (
-    <DrawerShell open={open} onClose={closeDrawer} ariaLabel="Details" focusMode={focusMode}>
-      <div style={{ '--c': `var(--${pipeline.color})` } as CSSProperties}>
+    <DrawerShell
+      open={open}
+      onClose={closeDrawer}
+      ariaLabel="Details"
+      focusMode={focusMode}
+      style={{ '--c': `var(--${pipeline.color})` } as CSSProperties}
+    >
+      <>
         <header className="dlg-head">
           <div className="dlg-title">
             <div className="kicker">
@@ -109,7 +115,7 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
               {idea.archived ? ' · 📁 Archived' : ''}
             </div>
             <div className="title-row">
-              <ProgressRing frac={prog} size={52} strokeWidth={4} color={`var(--${pipeline.color})`}>
+              <ProgressRing frac={prog} size={52} strokeWidth={4} className="pico" color={`var(--${pipeline.color})`}>
                 <span className="pi">{pipeline.icon}</span>
               </ProgressRing>
               <h2>{idea.title}</h2>
@@ -209,7 +215,7 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
             )}
           </div>
         </footer>
-      </div>
+      </>
     </DrawerShell>
   )
 }
@@ -229,8 +235,8 @@ function GuideDrawer({ open, pipelineId, stageIndex, onClose, onJump, onPrev, on
   const stage = pipeline.stages[stageIndex]
 
   return (
-    <DrawerShell open={open} onClose={onClose} ariaLabel="Stage guide">
-      <div style={{ '--c': `var(--${pipeline.color})` } as CSSProperties}>
+    <DrawerShell open={open} onClose={onClose} ariaLabel="Stage guide" style={{ '--c': `var(--${pipeline.color})` } as CSSProperties}>
+      <>
         <header className="dlg-head">
           <div className="dlg-title">
             <div className="kicker">
@@ -269,7 +275,7 @@ function GuideDrawer({ open, pipelineId, stageIndex, onClose, onJump, onPrev, on
             </button>
           </div>
         </footer>
-      </div>
+      </>
     </DrawerShell>
   )
 }

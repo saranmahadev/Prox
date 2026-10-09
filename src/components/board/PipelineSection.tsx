@@ -41,7 +41,7 @@ export function PipelineSection({
   return (
     <section className="pipe clay" style={{ '--c': `var(--${pipeline.color})` } as CSSProperties} data-pipe={pipeline.id}>
       <div className="pipe-head">
-        <ProgressRing frac={avg} size={58} strokeWidth={4} label={`${Math.round(avg * 100)}% complete`}>
+        <ProgressRing frac={avg} size={58} strokeWidth={4} className="pipe-ring" label={`${Math.round(avg * 100)}% complete`}>
           <span className="pipe-ico">{pipeline.icon}</span>
         </ProgressRing>
         <div className="grow">
