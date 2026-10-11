@@ -68,13 +68,84 @@
   padding-bottom: 160px;
 }
 
-/* Every Imaxt block tool renders its own live preview (.imx-ej-preview)
-   alongside its edit fields - useful standalone, but redundant here since
-   the toolbar's "Preview" button already renders the whole document.
-   Hiding it keeps one editing surface per block instead of two stacked
-   copies of the same content. */
+/* Imaxt block tools (Statement, Callout, Steps, ...) ship with no built-in
+   styling for their own editing chrome - select/input/contentEditable are
+   plain browser defaults, which is what made them read as a mismatched
+   "two different things" next to their fully-styled live preview. Every
+   tool's render() wraps everything in one div (imx-ej-<tool>) that is the
+   sole direct child of Editor.js's block content, so this one structural
+   selector reaches all of them without listing each tool by name - no
+   change needed whenever imaxt-editorjs adds a new block type. */
+.ed-holder .ce-block__content > div[class*='imx-ej-'] {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.ed-holder .ce-block__content > div[class*='imx-ej-'] select,
+.ed-holder .ce-block__content > div[class*='imx-ej-'] input[type='text'],
+.ed-holder .ce-block__content > div[class*='imx-ej-'] input[type='number'] {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+}
+.ed-holder .imx-ej-field {
+  min-height: 1.6em;
+  padding: 8px 10px;
+  border: 1px dashed var(--border2);
+  border-radius: 8px;
+  background: var(--surface2);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+}
+.ed-holder .imx-ej-field:focus {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+.ed-holder .imx-ej-item {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+}
+.ed-holder .imx-ej-add,
+.ed-holder .imx-ej-remove {
+  justify-self: start;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  background: var(--surface2);
+  cursor: pointer;
+}
+
+/* The live preview - labeled and set apart as "what will actually
+   publish", directly below the edit controls in the same card instead of
+   a separate, unrelated-looking block. */
 .ed-holder .imx-ej-preview {
-  display: none;
+  position: relative;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border2);
+}
+.ed-holder .imx-ej-preview::before {
+  content: 'Live preview';
+  position: absolute;
+  top: -8px;
+  left: 0;
+  padding: 0 6px;
+  background: var(--surface);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
 }
 
 /* Editor.js chrome (block toolbar, inline toolbar, settings popovers) -
