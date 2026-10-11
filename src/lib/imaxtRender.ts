@@ -4,6 +4,8 @@ import {
   attachStatCountUp,
   attachTicker,
   attachTypeLab,
+  escapeHtml,
+  renderImaxtCover,
   renderBanner,
   renderBars,
   renderCallout,
@@ -114,6 +116,28 @@ export function isImaxtBlockType(type: string): boolean {
 export function renderImaxtBlock(type: string, data: unknown): string | null {
   const render = IMAXT_RENDERERS[type]
   return render ? render(data) : null
+}
+
+interface CoverMetaLike {
+  coverMode: 'typographic' | 'image'
+  typographicCover: { kind: 'word' | 'stat' | 'quote' | 'stack'; text: string; sub: string }
+  coverAlt: string
+}
+
+/** Renders an article's cover exactly as it will publish: an <img> for the
+ * (off-convention) image mode, or imaxt-core's typographic cover markup -
+ * Blog's actual default - otherwise. `title` backs the cover's text when
+ * the author hasn't typed one, mirroring Blog's own coverPhrase() fallback. */
+export function renderCoverHtml(meta: CoverMetaLike | null | undefined, title: string, coverUrl: string): string {
+  if (meta?.coverMode === 'image') {
+    if (!coverUrl) return ''
+    return `<img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(meta.coverAlt)}">`
+  }
+  const text = meta?.typographicCover.text.trim()
+  return renderImaxtCover({
+    title,
+    cover: text ? { kind: meta!.typographicCover.kind, text, sub: meta!.typographicCover.sub || undefined } : undefined,
+  })
 }
 
 /** Runs every applicable attach* hydrator inside `root` and returns a single

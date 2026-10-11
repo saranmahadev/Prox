@@ -8,6 +8,7 @@ import { readMins } from '../../lib/articleMeta'
 import { headingRows, numberingFor } from '../../lib/headings'
 import { wordCount, hasCover } from '../../lib/text'
 import { useCoverUrl } from '../../hooks/useCoverUrl'
+import { renderCoverHtml } from '../../lib/imaxtRender'
 import { SourceRow } from './research/SourceRow'
 import { InsightRow } from './research/InsightRow'
 import { QuestionRow } from './research/QuestionRow'
@@ -167,9 +168,7 @@ function ArticleRecap({ idea }: { idea: Idea }) {
 
       <article className="ed-preview pub-article" id="pub-article">
         {hasCover(idea) && (
-          <div className="pub-cover">
-            <img src={coverUrl} alt={idea.meta?.coverAlt ?? ''} />
-          </div>
+          <div className="pub-cover" dangerouslySetInnerHTML={{ __html: renderCoverHtml(idea.meta, idea.title, coverUrl) }} />
         )}
         <h1 className="pub-h">{idea.title}</h1>
         {idea.summary && <p className="pub-sub">{idea.summary}</p>}

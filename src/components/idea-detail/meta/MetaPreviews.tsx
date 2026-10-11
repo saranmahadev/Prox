@@ -1,6 +1,7 @@
 import { excerptOf, slugify } from '../../../lib/articleMeta'
 import { hostOf } from '../../../lib/url'
 import { useCoverUrl } from '../../../hooks/useCoverUrl'
+import { renderCoverHtml } from '../../../lib/imaxtRender'
 import type { Idea } from '../../../types/idea'
 
 interface MetaPreviewsProps {
@@ -14,7 +15,8 @@ export function MetaPreviews({ idea }: MetaPreviewsProps) {
   const desc = excerptOf(idea)
   const host = hostOf(m?.canonical || 'prox.example')
   const coverUrl = useCoverUrl(idea)
-  const img = coverUrl ? <img src={coverUrl} alt={m?.coverAlt ?? ''} /> : null
+  const coverHtml = renderCoverHtml(m, idea.title, coverUrl)
+  const img = coverHtml ? <div className="mp-cover-html" dangerouslySetInnerHTML={{ __html: coverHtml }} /> : null
 
   return (
     <>

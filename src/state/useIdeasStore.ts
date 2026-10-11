@@ -407,7 +407,7 @@ export const useIdeasStore = create<IdeasState>()(
         await fileStore.put(key, file)
         const idea = get().ideas.find((i) => i.id === ideaId)
         if (idea?.meta?.cover) void fileStore.del(idea.meta.cover.key)
-        updateMetaFn(set, ideaId, (m) => ({ ...m, cover: { key }, coverUrl: '' }))
+        updateMetaFn(set, ideaId, (m) => ({ ...m, coverMode: 'image', cover: { key }, coverUrl: '' }))
         get().touchStage(ideaId, 'a-meta')
       },
 
@@ -416,7 +416,7 @@ export const useIdeasStore = create<IdeasState>()(
         await fileStore.put(key, blob)
         const idea = get().ideas.find((i) => i.id === ideaId)
         if (idea?.meta?.cover) void fileStore.del(idea.meta.cover.key)
-        updateMetaFn(set, ideaId, (m) => ({ ...m, cover: { key }, coverUrl: '' }))
+        updateMetaFn(set, ideaId, (m) => ({ ...m, coverMode: 'image', cover: { key }, coverUrl: '' }))
         get().touchStage(ideaId, 'a-meta')
       },
 

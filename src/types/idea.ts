@@ -76,6 +76,15 @@ export interface Distribution {
   repurpose: string[]
 }
 
+/** Blog's typographic cover (Imaxt): a giant word, number, quote or
+ * stacked title set in the post's series colour - the site's default
+ * cover style. Mirrors Blog's `imaxtCover` frontmatter schema exactly. */
+export interface TypographicCover {
+  kind: 'word' | 'stat' | 'quote' | 'stack'
+  text: string
+  sub: string
+}
+
 export interface ArticleMeta {
   seriesId: string | null
   part: number | null
@@ -88,6 +97,10 @@ export interface ArticleMeta {
   canonical: string
   category: string
   publishAt: string
+  /** Which cover this article publishes with. 'typographic' is Blog's
+   * convention; 'image' is schema-legal but off-convention there. */
+  coverMode: 'typographic' | 'image'
+  typographicCover: TypographicCover
   coverUrl: string
   coverAlt: string
   cover: { key: string } | null
