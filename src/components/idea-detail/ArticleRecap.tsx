@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useIdeasStore } from '../../state/useIdeasStore'
-import { headingRows, numberingFor } from '../../lib/outline'
+import { headingRows, numberingFor } from '../../lib/headings'
 import { hasCover, wordCount } from '../../lib/text'
 import { useCoverUrl } from '../../hooks/useCoverUrl'
 import type { Idea } from '../../types/idea'
@@ -15,9 +15,9 @@ interface ArticleRecapProps {
 export function ArticleRecap({ idea }: ArticleRecapProps) {
   const series = useIdeasStore((s) => s.series)
   const coverUrl = useCoverUrl(idea)
-  const headings = headingRows(idea.doc ?? { blocks: [] })
+  const headings = headingRows(idea.draft ?? { blocks: [] })
   const numbering = numberingFor(headings)
-  const words = wordCount(idea.doc)
+  const words = wordCount(idea.draft)
   const cover = hasCover(idea)
 
   if (!headings.length && !words && !cover) return null

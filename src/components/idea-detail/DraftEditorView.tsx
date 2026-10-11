@@ -31,15 +31,14 @@ interface DraftEditorViewProps {
 }
 
 /** Hydrates stored image blob keys into object URLs, then mounts a fresh
- * editor instance per idea (key={idea.id} below) - mirrors legacy's
- * mountDraft() awaiting blobURL() for each image before instantiating
- * Editor.js (lines 1102-1109). */
+ * editor instance per idea (key={idea.id} below). The Draft document is its
+ * own field (`idea.draft`) - fully independent from `idea.outline`. */
 export function DraftEditorView({ idea }: DraftEditorViewProps) {
   const [hydrated, setHydrated] = useState<{ ideaId: string; doc: OutputData } | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    hydrateImageUrls(idea.doc ?? EMPTY_DOC).then((doc) => {
+    hydrateImageUrls(idea.draft ?? EMPTY_DOC).then((doc) => {
       if (!cancelled) setHydrated({ ideaId: idea.id, doc })
     })
     return () => {
@@ -56,7 +55,7 @@ export function DraftEditorView({ idea }: DraftEditorViewProps) {
 
 function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData }) {
   const updateIdea = useIdeasStore((s) => s.updateIdea)
-  const updateDraftDoc = useIdeasStore((s) => s.updateDraftDoc)
+  const updateDraft = useIdeasStore((s) => s.updateDraft)
   const showToast = useUiStore((s) => s.showToast)
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode)
 
@@ -64,102 +63,126 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
   const [previewHtml, setPreviewHtml] = useState('')
   const [words, setWords] = useState(wordCount(initialDoc))
   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved')
+  const [outlineOpen, setOutlineOpen] = useState(false)
   const holderRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<EditorJS | null>(null)
   const undoRef = useRef<Undo | null>(null)
   const latestDocRef = useRef<OutputData>(initialDoc)
+  const initChainRef = useRef<Promise<void>>(Promise.resolve())
 
   // Mounts one Editor.js instance for the lifetime of this component - the
   // parent remounts the whole tree via key={idea.id}, so this never needs
-  // to re-run for a doc/idea change. Mirrors legacy's mountDraft() (lines
-  // 1102-1133); autosaves on every change via onChange.
+  // to re-run for a doc/idea change. Autosaves on every change via onChange.
   useEffect(() => {
     const holder = holderRef.current
     if (!holder) return
+    let editor: EditorJS | null = null
+    let cancelled = false
 
-    const editor = new EditorJS({
-      holder,
-      data: initialDoc,
-      placeholder: 'Tell your story…',
-      inlineToolbar: true,
-      tools: {
-        header: { class: Header, inlineToolbar: true, config: { levels: [1, 2, 3, 4, 5, 6], defaultLevel: 2 } },
-        list: { class: List, inlineToolbar: true, config: { defaultStyle: 'unordered' } },
-        quote: { class: Quote, inlineToolbar: true, config: { quotePlaceholder: 'Quote', captionPlaceholder: 'Author' } },
-        code: CodeTool,
-        delimiter: Delimiter,
-        // @editorjs/table's own constructor-options type makes `config`
-        // required, which @editorjs/editorjs's general BlockToolConstructable
-        // doesn't allow - a type mismatch in the package itself, not in this
-        // config.
-        table: { class: Table as unknown as BlockToolConstructable, inlineToolbar: true, config: {} },
-        image: {
-          class: ImageTool,
-          config: {
-            captionPlaceholder: 'Caption (also used as alt text)',
-            uploader: {
-              async uploadByFile(file: File) {
-                const key = uid()
-                await fileStore.put(key, file)
-                return { success: 1, file: { key, url: URL.createObjectURL(file) } }
-              },
-              async uploadByUrl(url: string) {
-                return { success: 1, file: { url } }
+    // React 18 Strict Mode double-invokes this effect in dev (mount ->
+    // cleanup -> mount). Editor.js's own initialization is asynchronous
+    // internally - calling destroy() on an instance that hasn't finished
+    // constructing yet is a no-op, so that instance's init can still
+    // complete *later* and insert its toolbar/blocks into the holder after
+    // the next mount's instance has already rendered into it ("two
+    // editors" visible at once). Chaining every mount/destroy through one
+    // promise per component instance (the ref survives Strict Mode's
+    // simulated unmount/remount) guarantees each instance is fully
+    // destroyed - after confirming it actually finished initializing -
+    // before the next one is ever constructed.
+    initChainRef.current = initChainRef.current.then(async () => {
+      if (cancelled) return
+      editor = new EditorJS({
+        holder,
+        data: initialDoc,
+        placeholder: 'Tell your story…',
+        inlineToolbar: true,
+        tools: {
+          header: { class: Header, inlineToolbar: true, config: { levels: [1, 2, 3, 4, 5, 6], defaultLevel: 2 } },
+          list: { class: List, inlineToolbar: true, config: { defaultStyle: 'unordered' } },
+          quote: { class: Quote, inlineToolbar: true, config: { quotePlaceholder: 'Quote', captionPlaceholder: 'Author' } },
+          code: CodeTool,
+          delimiter: Delimiter,
+          // @editorjs/table's own constructor-options type makes `config`
+          // required, which @editorjs/editorjs's general BlockToolConstructable
+          // doesn't allow - a type mismatch in the package itself, not in this
+          // config.
+          table: { class: Table as unknown as BlockToolConstructable, inlineToolbar: true, config: {} },
+          image: {
+            class: ImageTool,
+            config: {
+              captionPlaceholder: 'Caption (also used as alt text)',
+              uploader: {
+                async uploadByFile(file: File) {
+                  const key = uid()
+                  await fileStore.put(key, file)
+                  return { success: 1, file: { key, url: URL.createObjectURL(file) } }
+                },
+                async uploadByUrl(url: string) {
+                  return { success: 1, file: { url } }
+                },
               },
             },
           },
+          embed: Embed,
+          inlineCode: InlineCode,
+          marker: Marker,
+          underline: Underline,
         },
-        embed: Embed,
-        inlineCode: InlineCode,
-        marker: Marker,
-        underline: Underline,
-      },
-      onReady: () => {
-        try {
-          const undo = new Undo({ editor })
-          undo.initialize(initialDoc)
-          undoRef.current = undo
-        } catch {
-          undoRef.current = null
-        }
-      },
-      onChange: async (api) => {
-        setSaveState('saving')
-        try {
-          const out = await api.saver.save()
-          latestDocRef.current = out
-          updateDraftDoc(idea.id, out)
-          setWords(wordCount(out))
-        } finally {
-          setSaveState('saved')
-        }
-      },
+        onReady: () => {
+          try {
+            const undo = new Undo({ editor: editor! })
+            undo.initialize(initialDoc)
+            undoRef.current = undo
+          } catch {
+            undoRef.current = null
+          }
+        },
+        onChange: async (api) => {
+          setSaveState('saving')
+          try {
+            const out = await api.saver.save()
+            latestDocRef.current = out
+            updateDraft(idea.id, out)
+            setWords(wordCount(out))
+          } finally {
+            setSaveState('saved')
+          }
+        },
+      })
+      editorRef.current = editor
+      try {
+        await editor.isReady
+      } catch {
+        /* failed to initialize - nothing more to do */
+      }
     })
-    editorRef.current = editor
 
     return () => {
-      editorRef.current = null
-      undoRef.current = null
-      // React 18 Strict Mode double-invokes this effect in dev (mount ->
-      // cleanup -> mount), and EditorJS.destroy() tears its blocks down
-      // *asynchronously* internally (BlockManager.destroy() awaits each
-      // block's own destroy()) - calling it here doesn't finish before the
-      // next mount's `new EditorJS({holder, ...})` runs into the same
-      // holder, so both instances' toolbars end up in the DOM at once
-      // ("two versions" of the editor). Clearing the holder ourselves,
-      // synchronously, guarantees a clean slate for the next mount no
-      // matter when EditorJS's own async teardown actually finishes.
-      try {
-        editor.destroy()
-      } catch {
-        /* not finished initializing yet - nothing to tear down */
-      }
-      holder.innerHTML = ''
+      cancelled = true
+      initChainRef.current = initChainRef.current.then(async () => {
+        if (!editor) return
+        try {
+          await editor.isReady
+        } catch {
+          /* never finished initializing - nothing to tear down */
+        }
+        try {
+          editor.destroy()
+        } catch {
+          /* already torn down */
+        }
+        holder.innerHTML = ''
+        if (editorRef.current === editor) editorRef.current = null
+        undoRef.current = null
+        editor = null
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const readMinutes = readMins(words)
+  const outlineHtml = docToHtml(idea.outline?.blocks ?? [])
 
   async function handleCopyMarkdown() {
     const md = docToMarkdown(latestDocRef.current.blocks ?? [])
@@ -198,6 +221,9 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
         </span>
         <span className="ed-saved">{saveState === 'saving' ? 'Saving…' : 'Saved'}</span>
         <span className="ed-sp" />
+        <button className="btn" type="button" aria-pressed={outlineOpen} onClick={() => setOutlineOpen(true)}>
+          Outline
+        </button>
         <button className="btn" type="button" aria-pressed={preview} onClick={handleTogglePreview}>
           {preview ? 'Edit' : 'Preview'}
         </button>
@@ -228,6 +254,23 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
           <div className="ed-preview" dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="rs-empty">Nothing written yet.</p>' }} />
         )}
       </article>
+      {outlineOpen && (
+        <>
+          <div className="ed-outline-backdrop" onClick={() => setOutlineOpen(false)} />
+          <aside className="ed-outline-panel open" aria-label="Outline">
+            <div className="ed-outline-head">
+              <h5>Synopsis & planning notes</h5>
+              <button className="btn" type="button" aria-label="Close outline" onClick={() => setOutlineOpen(false)}>
+                ✕
+              </button>
+            </div>
+            <div
+              className="ed-outline-body ed-preview"
+              dangerouslySetInnerHTML={{ __html: outlineHtml || '<p class="rs-empty">No planning notes yet.</p>' }}
+            />
+          </aside>
+        </>
+      )}
     </>
   )
 }

@@ -5,7 +5,7 @@ import { CHANNELS, DISTRIBUTE_STATUS } from '../../data/distribution'
 import { docToHtml } from '../../lib/docHtml'
 import { hydrateImageUrls } from '../../lib/docImages'
 import { readMins } from '../../lib/articleMeta'
-import { headingRows, numberingFor } from '../../lib/outline'
+import { headingRows, numberingFor } from '../../lib/headings'
 import { wordCount, hasCover } from '../../lib/text'
 import { useCoverUrl } from '../../hooks/useCoverUrl'
 import { SourceRow } from './research/SourceRow'
@@ -113,21 +113,21 @@ function GenericRecap({ idea, pipeline }: PublishedStageViewProps) {
  * branch (lines 1266-1289). */
 function ArticleRecap({ idea }: { idea: Idea }) {
   const coverUrl = useCoverUrl(idea)
-  const words = wordCount(idea.doc)
-  const headings = headingRows(idea.doc ?? { blocks: [] })
+  const words = wordCount(idea.draft)
+  const headings = headingRows(idea.draft ?? { blocks: [] })
   const numbering = numberingFor(headings)
   const [bodyHtml, setBodyHtml] = useState('')
 
   useEffect(() => {
     let cancelled = false
-    const doc: OutputData = idea.doc ?? { blocks: [] }
+    const doc: OutputData = idea.draft ?? { blocks: [] }
     hydrateImageUrls(doc).then((hydrated) => {
       if (!cancelled) setBodyHtml(docToHtml(hydrated.blocks))
     })
     return () => {
       cancelled = true
     }
-  }, [idea.doc])
+  }, [idea.draft])
   const research = idea.research
   const hasResearch = research.sources.length > 0 || research.insights.length > 0 || research.questions.length > 0
   const postedChannels = CHANNELS.filter(([k]) => {

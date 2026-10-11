@@ -1,23 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { OutputData } from '@editorjs/editorjs'
-import { DndContext, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import {
-  addHeadingAfter,
-  addHeadingAtEnd,
-  addStarterHeadings,
-  headingRows,
-  moveSectionBefore,
-  moveSectionDown,
-  moveSectionUp,
-  numberingFor,
-  outlineStats,
-  removeHeading,
-  setHeadingLevel,
-  setHeadingText,
-} from '../../lib/outline'
+import { useEffect, useRef } from 'react'
+import EditorJS, { type OutputData } from '@editorjs/editorjs'
+import Header from '@editorjs/header'
+import List from '@editorjs/list'
+import Quote from '@editorjs/quote'
+import Delimiter from '@editorjs/delimiter'
 import { useIdeasStore } from '../../state/useIdeasStore'
-import { OutlineRow } from './outline/OutlineRow'
 import type { Idea } from '../../types/idea'
 
 const EMPTY_DOC: OutputData = { blocks: [] }
@@ -26,131 +13,86 @@ interface OutlineEditorViewProps {
   idea: Idea
 }
 
+/** Free-form planning canvas - rough notes, structure ideas, anything the
+ * author wants to jot down before writing. Entirely separate from the Draft
+ * document; nothing written here ever appears in the Draft stage, and
+ * nothing typed in Draft appears here. */
 export function OutlineEditorView({ idea }: OutlineEditorViewProps) {
-  const doc = idea.doc ?? EMPTY_DOC
-  const updateOutlineDoc = useIdeasStore((s) => s.updateOutlineDoc)
-  const [focusIndex, setFocusIndex] = useState<number | null>(null)
-  const [newText, setNewText] = useState('')
-  const [newLevel, setNewLevel] = useState(2)
-  const addInputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLOListElement>(null)
+  return <OutlineEditor key={idea.id} ideaId={idea.id} initialDoc={idea.outline ?? EMPTY_DOC} />
+}
 
-  const rows = headingRows(doc)
-  const numbering = numberingFor(rows)
-  const stats = outlineStats(doc)
+function OutlineEditor({ ideaId, initialDoc }: { ideaId: string; initialDoc: OutputData }) {
+  const updateOutline = useIdeasStore((s) => s.updateOutline)
+  const holderRef = useRef<HTMLDivElement>(null)
+  const initChainRef = useRef<Promise<void>>(Promise.resolve())
 
-  function apply(next: OutputData, focusAt: number | null = null) {
-    updateOutlineDoc(idea.id, next)
-    setFocusIndex(focusAt)
-  }
-
-  // Imperative focus (not the `autoFocus` prop) so it also works when the
-  // target row was already mounted, not just newly created - e.g. jumping
-  // to the previous row after deleting one with Backspace.
+  // Mirrors DraftEditorView's mount/cleanup strategy: React 18 Strict Mode
+  // double-invokes this effect in dev (mount -> cleanup -> mount), and
+  // Editor.js's own initialization is asynchronous internally - destroying
+  // an instance that hasn't finished constructing yet is a no-op, so it can
+  // still finish *later* and insert its toolbar/blocks into the holder after
+  // the next mount's instance already rendered into it ("two editors"
+  // visible at once). Chaining every mount/destroy through one promise per
+  // component instance guarantees each instance is fully destroyed - after
+  // confirming it actually finished initializing - before the next one is
+  // ever constructed.
   useEffect(() => {
-    if (focusIndex == null) return
-    listRef.current?.querySelector<HTMLInputElement>(`[data-row-index="${focusIndex}"]`)?.focus()
-  }, [focusIndex, doc])
+    const holder = holderRef.current
+    if (!holder) return
+    let editor: EditorJS | null = null
+    let cancelled = false
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-    const oldPos = rows.findIndex((r) => String(r.index) === active.id)
-    const newPos = rows.findIndex((r) => String(r.index) === over.id)
-    if (oldPos < 0 || newPos < 0) return
-    const reordered = arrayMove(rows, oldPos, newPos)
-    const movedRow = rows[oldPos]
-    const newArrayPos = reordered.indexOf(movedRow)
-    const nextRow = reordered[newArrayPos + 1]
-    const beforeIndex = nextRow ? nextRow.index : doc.blocks?.length ?? 0
-    apply(moveSectionBefore(doc, movedRow.index, beforeIndex))
-  }
+    initChainRef.current = initChainRef.current.then(async () => {
+      if (cancelled) return
+      editor = new EditorJS({
+        holder,
+        data: initialDoc,
+        placeholder: 'Jot down your rough structure, notes, and ideas before you start writing…',
+        inlineToolbar: true,
+        tools: {
+          header: { class: Header, inlineToolbar: true, config: { levels: [1, 2, 3, 4, 5, 6], defaultLevel: 2 } },
+          list: { class: List, inlineToolbar: true, config: { defaultStyle: 'unordered' } },
+          quote: { class: Quote, inlineToolbar: true, config: { quotePlaceholder: 'Quote', captionPlaceholder: 'Author' } },
+          delimiter: Delimiter,
+        },
+        onChange: async (api) => {
+          const out = await api.saver.save()
+          updateOutline(ideaId, out)
+        },
+      })
+      try {
+        await editor.isReady
+      } catch {
+        /* failed to initialize - nothing more to do */
+      }
+    })
 
-  function handleAddSubmit(e: FormEvent) {
-    e.preventDefault()
-    const text = newText.trim()
-    if (!text) return
-    apply(addHeadingAtEnd(doc, text, newLevel))
-    setNewText('')
-    addInputRef.current?.focus()
-  }
+    return () => {
+      cancelled = true
+      initChainRef.current = initChainRef.current.then(async () => {
+        if (!editor) return
+        try {
+          await editor.isReady
+        } catch {
+          /* never finished initializing - nothing to tear down */
+        }
+        try {
+          editor.destroy()
+        } catch {
+          /* already torn down */
+        }
+        holder.innerHTML = ''
+        editor = null
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
-    <>
-      <section className="rs-sec">
-        <h5>Article structure</h5>
-        <p className="rs-hint">Headings only, H1 to H6. Enter adds one, Tab changes its level, Alt+↑↓ moves its section.</p>
-        <div id="olWrap">
-          <div className="rs-stats">
-            <span>
-              <b>{stats.headings}</b> headings
-            </span>
-            <span>
-              <b>{stats.levels}</b> levels
-            </span>
-            <span>
-              <b>{stats.written}</b> sections written
-            </span>
-          </div>
-          <DndContext onDragEnd={handleDragEnd}>
-            <SortableContext items={rows.map((r) => String(r.index))} strategy={verticalListSortingStrategy}>
-              <ol className="ol-list" ref={listRef}>
-                {rows.map((row, i) => (
-                  <OutlineRow
-                    key={row.index}
-                    row={row}
-                    numbering={numbering[i].numbering}
-                    depth={numbering[i].depth}
-                    onLevelChange={(level) => apply(setHeadingLevel(doc, row.index, level), row.index)}
-                    onTextChange={(text) => apply(setHeadingText(doc, row.index, text), row.index)}
-                    onRemove={() => apply(removeHeading(doc, row.index))}
-                    onEnter={() => {
-                      const result = addHeadingAfter(doc, row.index)
-                      apply(result.doc, result.index)
-                    }}
-                    onTab={(shiftKey) => apply(setHeadingLevel(doc, row.index, row.level + (shiftKey ? -1 : 1)), row.index)}
-                    onMove={(direction) =>
-                      apply(direction === 'up' ? moveSectionUp(doc, row.index) : moveSectionDown(doc, row.index), row.index)
-                    }
-                    onBackspaceEmpty={() => {
-                      const prev = rows[i - 1]
-                      apply(removeHeading(doc, row.index), prev ? prev.index : null)
-                    }}
-                  />
-                ))}
-              </ol>
-            </SortableContext>
-          </DndContext>
-          {rows.length === 0 && (
-            <div className="ol-empty">
-              <p>No structure yet.</p>
-              <button className="btn" type="button" onClick={() => apply(addStarterHeadings(doc))}>
-                Start with Intro · Body · Conclusion
-              </button>
-            </div>
-          )}
-        </div>
-        <form className="rs-add" autoComplete="off" onSubmit={handleAddSubmit}>
-          <input
-            ref={addInputRef}
-            type="text"
-            value={newText}
-            placeholder="Add a heading…"
-            aria-label="Add a heading"
-            onChange={(e) => setNewText(e.target.value)}
-          />
-          <select aria-label="Level" value={newLevel} onChange={(e) => setNewLevel(+e.target.value)}>
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <option key={n} value={n}>
-                H{n}
-              </option>
-            ))}
-          </select>
-          <button className="btn primary" type="submit">
-            + Add
-          </button>
-        </form>
-      </section>
-    </>
+    <section className="ol-sec">
+      <h5>Synopsis & planning notes</h5>
+      <p className="rs-hint">Rough copy only - nothing here is shared with the Draft.</p>
+      <div className="ed-holder ol-holder" ref={holderRef} />
+    </section>
   )
 }

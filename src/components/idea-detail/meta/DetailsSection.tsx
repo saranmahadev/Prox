@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { readMins } from '../../../lib/articleMeta'
-import { headingRows } from '../../../lib/outline'
+import { headingRows } from '../../../lib/headings'
 import { wordCount } from '../../../lib/text'
 import { useIdeasStore } from '../../../state/useIdeasStore'
 import type { Idea } from '../../../types/idea'
@@ -15,8 +15,8 @@ export function DetailsSection({ idea }: DetailsSectionProps) {
   const removeTag = useIdeasStore((s) => s.removeTag)
   const [newTag, setNewTag] = useState('')
 
-  const headingCount = headingRows(idea.doc ?? { blocks: [] }).length
-  const words = wordCount(idea.doc)
+  const headingCount = headingRows(idea.draft ?? { blocks: [] }).length
+  const words = wordCount(idea.draft)
 
   function handleAddTag(e: FormEvent) {
     e.preventDefault()

@@ -30,7 +30,7 @@ function ResearchMeta({ idea }: { idea: Idea }) {
 
 function ArticleMeta({ idea }: { idea: Idea }) {
   if (idea.type !== 'article') return null
-  const words = wordCount(idea.doc)
+  const words = wordCount(idea.draft)
   const cover = hasCover(idea)
   if (!words && !cover) return null
   return (

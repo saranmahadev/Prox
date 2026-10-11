@@ -62,9 +62,9 @@ const GUIDES: Record<string, ReactNode> = {
   'a-outline': (
     <GuideList
       rows={[
-        ['Headings', 'H1 to H6 only, nested by level'],
-        ['Sections', "drag a heading to move its whole section"],
-        ['Link to Draft', 'the same headings appear in the editor'],
+        ['Synopsis', 'a free-form canvas for rough notes before you write'],
+        ['Blocks', 'headings, lists, quotes and dividers only - kept light'],
+        ['Independent', 'not synced to the Draft - peek at it anytime from there'],
         ['Status', 'yet to begin, in progress, completed or reviewed'],
       ]}
     />
@@ -74,7 +74,7 @@ const GUIDES: Record<string, ReactNode> = {
       rows={[
         ['Article', 'written in a Medium-style block editor'],
         ['Blocks', 'headings, quotes, lists, code, tables, images and embeds'],
-        ['Structure', 'headings come from the outline and stay in sync'],
+        ['Outline', 'open the Outline toggle to peek at your planning notes'],
         ['Status', 'yet to begin, in progress, completed or reviewed'],
       ]}
     />

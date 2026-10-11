@@ -7,10 +7,10 @@ import type { PipelineId } from '../types/pipeline'
 /**
  * Dev-only seed data: exactly one idea per pipeline, so every stage/view in
  * the app can be exercised without first clicking through Capture every
- * time. The "article" idea starts a few stages in with real outline/draft
- * content, since Outline <-> Draft sync needs something to sync. Reset via
- * the Reset Data button in the board header (ResetDataButton.tsx) - see
- * useIdeasStore's resetData action.
+ * time. The "article" idea starts a few stages in with a real draft body, so
+ * the Draft stage has something to show. Reset via the Reset Data button in
+ * the board header (ResetDataButton.tsx) - see useIdeasStore's resetData
+ * action.
  */
 
 function seedDoc(): OutputData {
@@ -63,7 +63,7 @@ export function createSeedIdeas(): Idea[] {
         questions: [],
         status: 'doing',
       }
-      idea.doc = seedDoc()
+      idea.draft = seedDoc()
     }
     return idea
   })

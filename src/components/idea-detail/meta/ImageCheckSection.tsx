@@ -20,7 +20,7 @@ interface ImageCheckSectionProps {
 }
 
 export function ImageCheckSection({ idea, onFixInDraft }: ImageCheckSectionProps) {
-  const images = collectImages(idea.doc)
+  const images = collectImages(idea.draft)
 
   return (
     <section className="rs-sec">

@@ -354,3 +354,50 @@
   list-style: none;
   padding-left: 0;
 }
+
+/* Outline toggle - a read-only slide-over panel showing idea.outline's
+   current content. One-way peek only; nothing here writes back. */
+.ed-outline-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, black 35%, transparent);
+  z-index: 40;
+}
+.ed-outline-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 90vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border2);
+  box-shadow: var(--shadow-lg);
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  animation: ed-outline-slide-in 0.18s ease-out;
+}
+@keyframes ed-outline-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.ed-outline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+.ed-outline-head h5 {
+  margin: 0;
+}
+.ed-outline-body {
+  overflow: auto;
+  padding: 16px 20px 40px;
+}

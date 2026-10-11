@@ -27,7 +27,7 @@ function firstParagraphText(doc: OutputData | null): string {
  * idea summary. Ported from legacy's excerptOf() (line 1154). */
 export function excerptOf(idea: Idea): string {
   if (idea.meta?.description) return idea.meta.description
-  const p = firstParagraphText(idea.doc)
+  const p = firstParagraphText(idea.draft)
   return (p || idea.summary || '').slice(0, 160)
 }
 

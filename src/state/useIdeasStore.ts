@@ -41,8 +41,8 @@ interface IdeasState {
   archiveIdea: (id: string) => void
   restoreIdea: (id: string) => void
 
-  updateDraftDoc: (ideaId: string, doc: OutputData) => void
-  updateOutlineDoc: (ideaId: string, doc: OutputData) => void
+  updateDraft: (ideaId: string, doc: OutputData) => void
+  updateOutline: (ideaId: string, doc: OutputData) => void
 
   addSourceLink: (ideaId: string, url: string, title: string) => void
   addSourceDoc: (ideaId: string, title: string) => void
@@ -99,7 +99,7 @@ function blobKeysOf(idea: Idea): string[] {
   const keys: string[] = []
   for (const source of idea.research.sources) if (source.file) keys.push(source.file.key)
   if (idea.meta?.cover) keys.push(idea.meta.cover.key)
-  for (const block of idea.doc?.blocks ?? []) {
+  for (const block of idea.draft?.blocks ?? []) {
     const key = (block.data as { file?: { key?: string } } | undefined)?.file?.key
     if (block.type === 'image' && typeof key === 'string') keys.push(key)
   }
@@ -235,14 +235,14 @@ export const useIdeasStore = create<IdeasState>()(
         }))
       },
 
-      updateDraftDoc: (ideaId, doc) => {
+      updateDraft: (ideaId, doc) => {
         const stripped = stripImageUrls(doc)
-        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, doc: stripped } : i)) }))
+        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, draft: stripped } : i)) }))
         get().touchStage(ideaId, 'a-draft')
       },
 
-      updateOutlineDoc: (ideaId, doc) => {
-        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, doc } : i)) }))
+      updateOutline: (ideaId, doc) => {
+        set((s) => ({ ideas: s.ideas.map((i) => (i.id === ideaId ? { ...i, outline: doc } : i)) }))
         get().touchStage(ideaId, 'a-outline')
       },
 
@@ -451,16 +451,29 @@ export const useIdeasStore = create<IdeasState>()(
     {
       name: 'prox-ideas-v1',
       storage: createJSONStorage(() => ideasStorage),
-      version: 1,
-      // v0 -> v1: Idea.doc moved from a Tiptap/ProseMirror document to an
-      // Editor.js OutputData document - convert any already-persisted docs
-      // instead of silently losing them (see migrateTiptapDoc.ts).
+      version: 2,
       migrate: (persisted, version) => {
-        const state = persisted as { ideas?: Idea[]; series?: Series[] }
+        type LegacyIdea = Idea & { doc?: unknown }
+        const state = persisted as { ideas?: LegacyIdea[]; series?: Series[] }
+        // v0 -> v1: Idea.doc moved from a Tiptap/ProseMirror document to an
+        // Editor.js OutputData document - convert any already-persisted docs
+        // instead of silently losing them (see migrateTiptapDoc.ts).
         if (version < 1 && state?.ideas) {
           state.ideas = state.ideas.map((idea) =>
-            idea.doc && (idea.doc as unknown as { type?: string }).type === 'doc' ? { ...idea, doc: migrateTiptapDoc(idea.doc) } : idea,
+            idea.doc && (idea.doc as { type?: string }).type === 'doc' ? { ...idea, doc: migrateTiptapDoc(idea.doc as OutputData) } : idea,
           )
+        }
+        // v1 -> v2: the single shared Idea.doc field split into independent
+        // `draft` and `outline` fields (Outline is no longer a view over the
+        // Draft's headings) - old doc content is intentionally discarded
+        // rather than carried over, since it was a product of the removed
+        // sync behavior.
+        if (version < 2 && state?.ideas) {
+          state.ideas = state.ideas.map(({ doc: _doc, ...idea }) => ({
+            ...idea,
+            draft: idea.type === 'article' ? { blocks: [] } : null,
+            outline: idea.type === 'article' ? { blocks: [] } : null,
+          }))
         }
         return state as IdeasState
       },

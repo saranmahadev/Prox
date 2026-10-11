@@ -111,7 +111,8 @@ export interface Idea {
   research: Research
   stageStatus: Record<string, StageStatus> // keyed by "tool stage" id
 
-  doc: OutputData | null // Editor.js document, article pipeline only
+  draft: OutputData | null // Editor.js document - the article body, article pipeline only
+  outline: OutputData | null // Editor.js document - free-form planning notes, article pipeline only
   meta: ArticleMeta | null // article pipeline only
   dist: Distribution | null // article pipeline only
 }

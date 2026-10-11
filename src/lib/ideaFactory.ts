@@ -68,7 +68,8 @@ export function createIdea(input: NewIdeaInput): Idea {
     archivedAt: null,
     research: createEmptyResearch(),
     stageStatus: {},
-    doc: isArticle ? { blocks: [] } : null,
+    draft: isArticle ? { blocks: [] } : null,
+    outline: isArticle ? { blocks: [] } : null,
     meta: isArticle ? createEmptyArticleMeta() : null,
     dist: isArticle ? createEmptyDistribution() : null,
   }

@@ -1,5 +1,5 @@
 import { excerptOf } from '../lib/articleMeta'
-import { headingRows } from '../lib/outline'
+import { headingRows } from '../lib/headings'
 import type { Idea } from '../types/idea'
 
 /** Ported from legacy/index.html's CHANNELS/DSTAT (lines 1236-1237). */
@@ -23,7 +23,7 @@ export function snippet(idea: Idea, channel: string): string {
   const url = (idea.meta?.canonical || blogUrl || '').trim()
   const tags = idea.tags.map((t) => '#' + t.replace(/\s+/g, '')).join(' ')
   const excerpt = excerptOf(idea)
-  const headings = headingRows(idea.doc ?? { blocks: [] })
+  const headings = headingRows(idea.draft ?? { blocks: [] })
     .map((h) => h.text)
     .filter(Boolean)
 
