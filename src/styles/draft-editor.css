@@ -68,6 +68,15 @@
   padding-bottom: 160px;
 }
 
+/* Every Imaxt block tool renders its own live preview (.imx-ej-preview)
+   alongside its edit fields - useful standalone, but redundant here since
+   the toolbar's "Preview" button already renders the whole document.
+   Hiding it keeps one editing surface per block instead of two stacked
+   copies of the same content. */
+.ed-holder .imx-ej-preview {
+  display: none;
+}
+
 /* Editor.js chrome (block toolbar, inline toolbar, settings popovers) -
    themed to match the app instead of Editor.js's own default look. */
 .ed-holder .codex-editor__redactor {

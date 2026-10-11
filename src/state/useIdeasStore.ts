@@ -477,7 +477,7 @@ export const useIdeasStore = create<IdeasState>()(
     {
       name: 'prox-ideas-v1',
       storage: createJSONStorage(() => ideasStorage),
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         type LegacyIdea = Idea & { doc?: unknown }
         const state = persisted as { ideas?: LegacyIdea[]; series?: Series[] }
@@ -520,6 +520,30 @@ export const useIdeasStore = create<IdeasState>()(
             while (seen.has(slug)) slug = `${base}-${n++}`
             seen.add(slug)
             return { ...ser, slug, tone: legacy.tone ?? null, pattern: legacy.pattern ?? null, publishedToBlog: false }
+          })
+        }
+        // v3 -> v4: ArticleMeta gained coverMode/typographicCover (Phase 2)
+        // and allowImages/publishedPr (Phase 3/7) after some ideas had
+        // already been created - backfill every article idea's meta with
+        // createEmptyArticleMeta()'s defaults for whatever fields are
+        // missing, so no idea is ever left with a half-built meta object
+        // that later crashes on `.typographicCover.text`.
+        if (version < 4 && state?.ideas) {
+          state.ideas = state.ideas.map((idea) => {
+            if (idea.type !== 'article' || !idea.meta) return idea
+            type LegacyMeta = Partial<ArticleMeta>
+            const legacy = idea.meta as LegacyMeta
+            return {
+              ...idea,
+              meta: {
+                ...createEmptyArticleMeta(),
+                ...legacy,
+                coverMode: legacy.coverMode ?? 'typographic',
+                typographicCover: legacy.typographicCover ?? { kind: 'stack', text: '', sub: '' },
+                allowImages: legacy.allowImages ?? false,
+                publishedPr: legacy.publishedPr ?? null,
+              },
+            }
           })
         }
         return state as IdeasState

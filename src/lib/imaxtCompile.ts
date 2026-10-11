@@ -133,9 +133,10 @@ export function compileArticleToMdx(idea: Idea, options: CompileOptions = {}): C
     const image = options.coverImagePath ?? meta.coverUrl
     if (image) frontmatter.cover = { image, alt: meta.coverAlt }
   } else {
-    const text = meta.typographicCover.text.trim() || coverPhrase(idea.title)
-    const sub = meta.typographicCover.sub.trim()
-    frontmatter.cover = sub ? { kind: meta.typographicCover.kind, text, sub } : { kind: meta.typographicCover.kind, text }
+    const typo = meta.typographicCover ?? { kind: 'stack' as const, text: '', sub: '' }
+    const text = typo.text.trim() || coverPhrase(idea.title)
+    const sub = typo.sub.trim()
+    frontmatter.cover = sub ? { kind: typo.kind, text, sub } : { kind: typo.kind, text }
   }
 
   if (meta.canonical) frontmatter.canonical = meta.canonical

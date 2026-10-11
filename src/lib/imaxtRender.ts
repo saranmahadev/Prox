@@ -133,10 +133,11 @@ export function renderCoverHtml(meta: CoverMetaLike | null | undefined, title: s
     if (!coverUrl) return ''
     return `<img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(meta.coverAlt)}">`
   }
-  const text = meta?.typographicCover.text.trim()
+  const typo = meta?.typographicCover
+  const text = typo?.text.trim()
   return renderImaxtCover({
     title,
-    cover: text ? { kind: meta!.typographicCover.kind, text, sub: meta!.typographicCover.sub || undefined } : undefined,
+    cover: text && typo ? { kind: typo.kind, text, sub: typo.sub || undefined } : undefined,
   })
 }
 
