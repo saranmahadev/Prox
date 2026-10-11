@@ -12,8 +12,10 @@ import InlineCode from '@editorjs/inline-code'
 import Marker from '@editorjs/marker'
 import Underline from '@editorjs/underline'
 import Undo from 'editorjs-undo'
+import { imaxtTools } from '@inflate-ai/imaxt-editorjs'
 import { hydrateImageUrls } from '../../lib/docImages'
 import { docToHtml } from '../../lib/docHtml'
+import { hydrateImaxtBlocks } from '../../lib/imaxtRender'
 import { fileStore } from '../../lib/fileStore'
 import { uid } from '../../lib/id'
 import { docToMarkdown } from '../../lib/markdown'
@@ -65,6 +67,7 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved')
   const [outlineOpen, setOutlineOpen] = useState(false)
   const holderRef = useRef<HTMLDivElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<EditorJS | null>(null)
   const undoRef = useRef<Undo | null>(null)
   const latestDocRef = useRef<OutputData>(initialDoc)
@@ -128,6 +131,10 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
           inlineCode: InlineCode,
           marker: Marker,
           underline: Underline,
+          // Imaxt's typographic blocks (Statement, Callout, Stat, Timeline,
+          // CodeWalk, ...) - same tool set Blog's authors would reach for,
+          // so a draft written here publishes with no block left behind.
+          ...imaxtTools,
         },
         onReady: () => {
           try {
@@ -180,6 +187,14 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Re-hydrate Imaxt's interactive blocks (count-up stats, scroll-synced
+  // steps, marquee/ticker motion, the font lab) every time the preview's
+  // HTML changes, since dangerouslySetInnerHTML replaces the DOM each time.
+  useEffect(() => {
+    if (!preview || !previewRef.current) return
+    return hydrateImaxtBlocks(previewRef.current)
+  }, [preview, previewHtml])
 
   const readMinutes = readMins(words)
   const outlineHtml = docToHtml(idea.outline?.blocks ?? [])
@@ -251,7 +266,11 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
         />
         <div className="ed-holder" hidden={preview} ref={holderRef} />
         {preview && (
-          <div className="ed-preview" dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="rs-empty">Nothing written yet.</p>' }} />
+          <div
+            className="ed-preview"
+            ref={previewRef}
+            dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="rs-empty">Nothing written yet.</p>' }}
+          />
         )}
       </article>
       {outlineOpen && (

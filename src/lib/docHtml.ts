@@ -1,5 +1,6 @@
 import type { OutputBlockData } from '@editorjs/editorjs'
 import { escapeHtml, itemText, stripHtml, type ListItem } from './editorjsBlocks'
+import { renderImaxtBlock } from './imaxtRender'
 
 /**
  * Manual Editor.js blocks -> HTML renderer, used for both the draft
@@ -100,7 +101,9 @@ function renderBlock(block: OutputBlockData): string {
       return `<p><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml((d.source as string) ?? '')}</a></p>`
     }
     default:
-      return ''
+      // Imaxt's typographic blocks (statement, callout, stat, timeline, ...)
+      // render through imaxt-core, matching Blog's published HTML exactly.
+      return renderImaxtBlock(block.type, d) ?? ''
   }
 }
 
