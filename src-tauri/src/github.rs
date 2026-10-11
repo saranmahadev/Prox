@@ -2,6 +2,7 @@
 //! Kept server-side (Rust) rather than called from the webview: GitHub credentials
 //! never touch the frontend, and the OS keychain is the only place the token lives.
 
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use keyring::Entry;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use serde::{Deserialize, Serialize};
@@ -282,4 +283,29 @@ pub async fn get_pr_status(pr_number: u64) -> Result<PrStatus, String> {
     html_url: pr["html_url"].as_str().unwrap_or_default().to_string(),
     mergeable: pr["mergeable"].as_bool(),
   })
+}
+
+/// Reads a text file already published on blog (e.g. to re-import an
+/// already-live post back into Prox for editing - see Phase 8's
+/// mdxToBlocks round trip). `git_ref` is a branch, tag or commit; omit for
+/// the repo's default branch.
+#[tauri::command]
+pub async fn fetch_blog_file(path: String, git_ref: Option<String>) -> Result<String, String> {
+  let token = get_token()?;
+  let client = client()?;
+  let encoded_path = encode_path(&path);
+  let query = git_ref.map(|r| format!("?ref={r}")).unwrap_or_default();
+  let file = github_get(
+    &client,
+    &token,
+    &format!("/repos/{OWNER}/{REPO}/contents/{encoded_path}{query}"),
+  )
+  .await?;
+  let content = file["content"]
+    .as_str()
+    .ok_or_else(|| format!("{path} has no readable content (is it a directory?)"))?;
+  let bytes = STANDARD
+    .decode(content.replace('\n', ""))
+    .map_err(|e| e.to_string())?;
+  String::from_utf8(bytes).map_err(|e| e.to_string())
 }

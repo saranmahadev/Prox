@@ -11,7 +11,7 @@ import type { Idea, Series } from '../types/idea'
  * not in this map is a standard Editor.js block (paragraph, header, list,
  * ...) and goes through docToMarkdown + the `markdown` passthrough block
  * instead - see imaxt-mdx's blocks.ts for why that variant exists. */
-const IMAXT_TYPE_MAP: Record<string, string> = {
+export const IMAXT_TYPE_MAP: Record<string, string> = {
   banner: 'banner',
   bars: 'bars',
   callout: 'callout',

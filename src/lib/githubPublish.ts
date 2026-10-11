@@ -58,6 +58,13 @@ export function publishToBlog(request: PublishRequest): Promise<PublishResult> {
   })
 }
 
+/** Reads a text file already published on blog - used to re-import an
+ * already-live post back into Prox (Phase 8). `gitRef` is a branch, tag or
+ * commit; omit for the repo's default branch. */
+export function fetchBlogFile(path: string, gitRef?: string): Promise<string> {
+  return invoke('fetch_blog_file', { path, gitRef })
+}
+
 export async function getPrStatus(prNumber: number): Promise<PrStatus> {
   const result = await invoke<{ state: string; merged: boolean; html_url: string; mergeable: boolean | null }>('get_pr_status', {
     prNumber,

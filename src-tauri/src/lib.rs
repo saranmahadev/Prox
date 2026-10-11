@@ -19,6 +19,7 @@ pub fn run() {
       github::clear_github_token,
       github::publish_to_blog,
       github::get_pr_status,
+      github::fetch_blog_file,
     ])
     .run(tauri::generate_context!())
     .expect("error while building tauri application");
