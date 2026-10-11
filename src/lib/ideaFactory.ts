@@ -39,6 +39,7 @@ export function createEmptyArticleMeta(): ArticleMeta {
     coverUrl: '',
     coverAlt: '',
     cover: null,
+    allowImages: false,
   }
 }
 

@@ -104,6 +104,10 @@ export interface ArticleMeta {
   coverUrl: string
   coverAlt: string
   cover: { key: string } | null
+  /** Blog's posts use no images by policy - this is the explicit, rare
+   * opt-in (matches its `allowImages` frontmatter flag exactly). Leaving
+   * it false while the draft has image blocks blocks publishing. */
+  allowImages: boolean
 }
 
 export interface Idea {
