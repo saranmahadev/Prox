@@ -204,7 +204,7 @@ function ArticleRecap({ idea }: { idea: Idea }) {
         ))}
       </nav>
 
-      <article className="ed-preview pub-article" id="pub-article">
+      <article className="ed-preview pub-article prose" id="pub-article">
         {hasCover(idea) && (
           <div className="pub-cover" dangerouslySetInnerHTML={{ __html: renderCoverHtml(idea.meta, idea.title, coverUrl) }} />
         )}

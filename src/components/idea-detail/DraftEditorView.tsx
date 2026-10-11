@@ -298,10 +298,10 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
           value={idea.summary}
           onChange={(e) => updateIdea(idea.id, { summary: e.target.value })}
         />
-        <div className="ed-holder" hidden={preview} ref={holderRef} />
+        <div className="ed-holder prose" hidden={preview} ref={holderRef} />
         {preview && (
           <div
-            className="ed-preview"
+            className="ed-preview prose"
             ref={previewRef}
             dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="rs-empty">Nothing written yet.</p>' }}
           />

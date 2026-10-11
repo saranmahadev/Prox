@@ -76,3 +76,20 @@
     --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.7);
   }
 }
+
+/* imaxt-core's own :root tokens only switch on the OS's prefers-color-scheme
+   (see its styles.css header: "a consuming site can restyle it by
+   redeclaring any of these custom properties"), which ignores Prox's own
+   manual theme toggle - an Imaxt block could render light while the rest
+   of the app is dark, or vice versa. Pointing its token names at Prox's own
+   (var(--bg) etc. already flip between the blocks above) keeps every
+   Imaxt block in lockstep with whichever theme is actually showing,
+   in one rule instead of duplicating it per theme selector. */
+:root {
+  --paper: var(--bg);
+  --paper2: var(--surface2);
+  --card: var(--surface);
+  --line: var(--border2);
+  --hair: var(--border);
+  --on-accent: var(--accent-ink);
+}
