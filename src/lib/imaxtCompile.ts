@@ -3,7 +3,7 @@ import { blocksToMdx, type Block } from '@inflate-ai/imaxt-mdx'
 import { coverPhrase } from '@inflate-ai/imaxt-core'
 import { docToMarkdown } from './markdown'
 import { excerptOf } from './articleMeta'
-import type { Idea } from '../types/idea'
+import type { Idea, Series } from '../types/idea'
 
 /** imaxt-editorjs registers its tools under camelCase keys
  * (OutputBlockData.type); imaxt-mdx's Block.type is kebab-case. Everything
@@ -118,5 +118,19 @@ export function compileArticleToMdx(idea: Idea): CompiledArticle {
 
   const blocks = toImaxtBlocks(idea.draft?.blocks ?? [])
   const mdx = blocksToMdx({ frontmatter, blocks })
+  return { frontmatter, mdx }
+}
+
+/** Compiles a series into Blog's series/<slug>/index.md - frontmatter only,
+ * no body. tone/pattern are left out entirely when unset, so Blog derives
+ * its own stable choice from the slug rather than Prox guessing one. */
+export function compileSeriesIndexToMdx(series: Series): CompiledArticle {
+  const frontmatter: Record<string, unknown> = {
+    title: series.name,
+    description: series.desc.slice(0, 200),
+  }
+  if (series.tone) frontmatter.tone = series.tone
+  if (series.pattern) frontmatter.pattern = series.pattern
+  const mdx = blocksToMdx({ frontmatter, blocks: [] })
   return { frontmatter, mdx }
 }

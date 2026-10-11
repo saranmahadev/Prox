@@ -134,8 +134,16 @@ export interface Idea {
   dist: Distribution | null // article pipeline only
 }
 
+/** Matches Blog's series `index.md` frontmatter exactly - tone/pattern are
+ * optional there too (a stable choice is derived from the slug when unset),
+ * so null means "no override" rather than "unset = error". */
 export interface Series {
   id: string
   name: string
   desc: string
+  /** Blog's folder name: src/content/series/<slug>/. Stable once published -
+   * changing it after the series has live posts moves the whole folder. */
+  slug: string
+  tone: 'mint' | 'lilac' | 'sky' | 'rose' | null
+  pattern: 'dots' | 'rings' | 'grid' | 'stripes' | 'check' | null
 }

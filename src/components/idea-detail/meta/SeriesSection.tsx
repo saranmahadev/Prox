@@ -5,6 +5,23 @@ import { useIdeasStore } from '../../../state/useIdeasStore'
 import { SeriesMemberRow } from './SeriesMemberRow'
 import type { Idea, Series } from '../../../types/idea'
 
+const TONES: { value: Series['tone']; label: string }[] = [
+  { value: null, label: 'Auto (from slug)' },
+  { value: 'mint', label: 'Mint' },
+  { value: 'lilac', label: 'Lilac' },
+  { value: 'sky', label: 'Sky' },
+  { value: 'rose', label: 'Rose' },
+]
+
+const PATTERNS: { value: Series['pattern']; label: string }[] = [
+  { value: null, label: 'Auto (from slug)' },
+  { value: 'dots', label: 'Dots' },
+  { value: 'rings', label: 'Rings' },
+  { value: 'grid', label: 'Grid' },
+  { value: 'stripes', label: 'Stripes' },
+  { value: 'check', label: 'Check' },
+]
+
 interface SeriesSectionProps {
   idea: Idea
   series: Series[]
@@ -18,6 +35,9 @@ export function SeriesSection({ idea, series, members, onOpenIdea }: SeriesSecti
   const setIdeaPart = useIdeasStore((s) => s.setIdeaPart)
   const updateSeriesName = useIdeasStore((s) => s.updateSeriesName)
   const updateSeriesDesc = useIdeasStore((s) => s.updateSeriesDesc)
+  const updateSeriesSlug = useIdeasStore((s) => s.updateSeriesSlug)
+  const updateSeriesTone = useIdeasStore((s) => s.updateSeriesTone)
+  const updateSeriesPattern = useIdeasStore((s) => s.updateSeriesPattern)
   const deleteSeries = useIdeasStore((s) => s.deleteSeries)
   const reorderSeriesMembers = useIdeasStore((s) => s.reorderSeriesMembers)
 
@@ -114,6 +134,49 @@ export function SeriesSection({ idea, series, members, onOpenIdea }: SeriesSecti
             value={current.desc}
             onChange={(e) => updateSeriesDesc(current.id, e.target.value)}
           />
+          <div className="mf">
+            <label>Slug</label>
+            <input
+              type="text"
+              aria-label="Series slug"
+              value={current.slug}
+              onChange={(e) => updateSeriesSlug(current.id, e.target.value)}
+            />
+            <p className="rs-hint">
+              Blog's folder: <code>src/content/series/{current.slug || '…'}/</code>. Changing this after the series has
+              live posts moves the whole folder.
+            </p>
+          </div>
+          <div className="mrow">
+            <label className="mf">
+              Tone
+              <select
+                aria-label="Series tone"
+                value={current.tone ?? ''}
+                onChange={(e) => updateSeriesTone(current.id, (e.target.value || null) as Series['tone'])}
+              >
+                {TONES.map((t) => (
+                  <option key={t.label} value={t.value ?? ''}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="mf">
+              Pattern
+              <select
+                aria-label="Series pattern"
+                value={current.pattern ?? ''}
+                onChange={(e) => updateSeriesPattern(current.id, (e.target.value || null) as Series['pattern'])}
+              >
+                {PATTERNS.map((p) => (
+                  <option key={p.label} value={p.value ?? ''}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <DndContext onDragEnd={handleDragEnd}>
             <SortableContext items={members.map((m) => m.id)} strategy={verticalListSortingStrategy}>
               <ol className="ser-list">
