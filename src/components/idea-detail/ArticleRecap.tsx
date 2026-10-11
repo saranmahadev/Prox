@@ -3,6 +3,7 @@ import { useIdeasStore } from '../../state/useIdeasStore'
 import { headingRows, numberingFor } from '../../lib/headings'
 import { hasCover, wordCount } from '../../lib/text'
 import { useCoverUrl } from '../../hooks/useCoverUrl'
+import { renderCoverHtml } from '../../lib/imaxtRender'
 import type { Idea } from '../../types/idea'
 
 interface ArticleRecapProps {
@@ -31,9 +32,7 @@ export function ArticleRecap({ idea }: ArticleRecapProps) {
         {seriesOf ? ` · ${seriesOf.name}${idea.meta?.part ? ` #${idea.meta.part}` : ''}` : ''}
       </summary>
       {cover && (
-        <div className="ro-cover">
-          <img src={coverUrl} alt={idea.meta?.coverAlt ?? ''} />
-        </div>
+        <div className="ro-cover" dangerouslySetInnerHTML={{ __html: renderCoverHtml(idea.meta, idea.title, coverUrl) }} />
       )}
       <ul className="ro-tree">
         {headings.map((h, i) => (

@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import '@inflate-ai/imaxt-core/styles.css';
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/fraunces/opsz-italic.css';
 @import './tokens.css';
 @import './components.css';
 @import './board.css';

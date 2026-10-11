@@ -26,8 +26,13 @@
     "@editorjs/quote": "^2.7.6",
     "@editorjs/table": "^2.4.6",
     "@editorjs/underline": "^1.2.1",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@inflate-ai/imaxt-core": "^1.0.0",
+    "@inflate-ai/imaxt-editorjs": "^1.0.0",
+    "@inflate-ai/imaxt-mdx": "^1.0.0",
     "@tauri-apps/api": "^2.12.2",
     "editorjs-undo": "^2.0.28",
+    "mdast-util-from-markdown": "^2.1.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zustand": "^5.0.15"
@@ -35,6 +40,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2.12.1",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

@@ -1,6 +1,8 @@
 import { useBoardStore } from '../../state/useBoardStore'
 import { Button } from '../ui'
 import { ResetDataButton } from './ResetDataButton'
+import { SettingsButton } from '../settings/SettingsButton'
+import { ImportFromBlogButton } from './ImportFromBlogButton'
 
 interface BoardHeaderProps {
   archivedCount: number
@@ -32,6 +34,8 @@ export function BoardHeader({ archivedCount, onOpenArchive, onCapture }: BoardHe
         <button className="chip" aria-label="Open archive" onClick={onOpenArchive}>
           📁 Archive <em>{archivedCount}</em>
         </button>
+        <SettingsButton />
+        <ImportFromBlogButton />
         <ResetDataButton />
         <Button variant="primary" onClick={onCapture}>
           ＋ Capture idea

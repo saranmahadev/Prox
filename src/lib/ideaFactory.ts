@@ -34,9 +34,13 @@ export function createEmptyArticleMeta(): ArticleMeta {
     canonical: '',
     category: '',
     publishAt: '',
+    coverMode: 'typographic',
+    typographicCover: { kind: 'stack', text: '', sub: '' },
     coverUrl: '',
     coverAlt: '',
     cover: null,
+    allowImages: false,
+    publishedPr: null,
   }
 }
 

@@ -9,6 +9,7 @@ import { migrateTiptapDoc } from '../lib/migrateTiptapDoc'
 import { uid } from '../lib/id'
 import { debounced, localStorageAdapter } from '../lib/storage'
 import { isDone, pipeOf, stageOf } from '../lib/selectors'
+import { slugify } from '../lib/articleMeta'
 import type { ArticleMeta, ChannelDist, Distribution, Idea, Research, Series, StageStatus } from '../types/idea'
 import { createEmptyArticleMeta, createEmptyDistribution } from '../lib/ideaFactory'
 
@@ -62,6 +63,10 @@ interface IdeasState {
   addSeries: (name: string) => Series
   updateSeriesName: (seriesId: string, name: string) => void
   updateSeriesDesc: (seriesId: string, desc: string) => void
+  updateSeriesSlug: (seriesId: string, slug: string) => void
+  updateSeriesTone: (seriesId: string, tone: Series['tone']) => void
+  updateSeriesPattern: (seriesId: string, pattern: Series['pattern']) => void
+  markSeriesPublished: (seriesId: string) => void
   deleteSeries: (seriesId: string) => void
   setIdeaSeries: (ideaId: string, seriesId: string | null) => void
   setIdeaPart: (ideaId: string, part: number | null) => void
@@ -357,7 +362,12 @@ export const useIdeasStore = create<IdeasState>()(
       },
 
       addSeries: (name) => {
-        const series: Series = { id: uid(), name, desc: '' }
+        const base = slugify(name) || 'series'
+        const existing = new Set(get().series.map((ser) => ser.slug))
+        let slug = base
+        let n = 2
+        while (existing.has(slug)) slug = `${base}-${n++}`
+        const series: Series = { id: uid(), name, desc: '', slug, tone: null, pattern: null, publishedToBlog: false }
         set((s) => ({ series: [...s.series, series] }))
         return series
       },
@@ -368,6 +378,22 @@ export const useIdeasStore = create<IdeasState>()(
 
       updateSeriesDesc: (seriesId, desc) => {
         set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, desc } : ser)) }))
+      },
+
+      updateSeriesSlug: (seriesId, slug) => {
+        set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, slug } : ser)) }))
+      },
+
+      updateSeriesTone: (seriesId, tone) => {
+        set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, tone } : ser)) }))
+      },
+
+      updateSeriesPattern: (seriesId, pattern) => {
+        set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, pattern } : ser)) }))
+      },
+
+      markSeriesPublished: (seriesId) => {
+        set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, publishedToBlog: true } : ser)) }))
       },
 
       deleteSeries: (seriesId) => {
@@ -407,7 +433,7 @@ export const useIdeasStore = create<IdeasState>()(
         await fileStore.put(key, file)
         const idea = get().ideas.find((i) => i.id === ideaId)
         if (idea?.meta?.cover) void fileStore.del(idea.meta.cover.key)
-        updateMetaFn(set, ideaId, (m) => ({ ...m, cover: { key }, coverUrl: '' }))
+        updateMetaFn(set, ideaId, (m) => ({ ...m, coverMode: 'image', cover: { key }, coverUrl: '' }))
         get().touchStage(ideaId, 'a-meta')
       },
 
@@ -416,7 +442,7 @@ export const useIdeasStore = create<IdeasState>()(
         await fileStore.put(key, blob)
         const idea = get().ideas.find((i) => i.id === ideaId)
         if (idea?.meta?.cover) void fileStore.del(idea.meta.cover.key)
-        updateMetaFn(set, ideaId, (m) => ({ ...m, cover: { key }, coverUrl: '' }))
+        updateMetaFn(set, ideaId, (m) => ({ ...m, coverMode: 'image', cover: { key }, coverUrl: '' }))
         get().touchStage(ideaId, 'a-meta')
       },
 
@@ -451,7 +477,7 @@ export const useIdeasStore = create<IdeasState>()(
     {
       name: 'prox-ideas-v1',
       storage: createJSONStorage(() => ideasStorage),
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         type LegacyIdea = Idea & { doc?: unknown }
         const state = persisted as { ideas?: LegacyIdea[]; series?: Series[] }
@@ -474,6 +500,27 @@ export const useIdeasStore = create<IdeasState>()(
             draft: idea.type === 'article' ? { blocks: [] } : null,
             outline: idea.type === 'article' ? { blocks: [] } : null,
           }))
+        }
+        // v2 -> v3: Series gained slug/tone/pattern (Blog's series index.md
+        // frontmatter shape) - backfill a slug from each existing series'
+        // name so none collide, leaving tone/pattern unset (Blog derives a
+        // stable choice from the slug when they're absent).
+        if (version < 3 && state?.series) {
+          const seen = new Set<string>()
+          state.series = state.series.map((ser) => {
+            type LegacySeries = Series & { slug?: string; tone?: Series['tone']; pattern?: Series['pattern']; publishedToBlog?: boolean }
+            const legacy = ser as LegacySeries
+            if (legacy.slug) {
+              seen.add(legacy.slug)
+              return { ...ser, publishedToBlog: legacy.publishedToBlog ?? false }
+            }
+            const base = slugify(ser.name) || 'series'
+            let slug = base
+            let n = 2
+            while (seen.has(slug)) slug = `${base}-${n++}`
+            seen.add(slug)
+            return { ...ser, slug, tone: legacy.tone ?? null, pattern: legacy.pattern ?? null, publishedToBlog: false }
+          })
         }
         return state as IdeasState
       },

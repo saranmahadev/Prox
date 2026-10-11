@@ -31,6 +31,10 @@ export function wordCount(doc: OutputData | null): number {
   return text ? text.split(/\s+/).length : 0
 }
 
+/** An article always has a cover once it has meta: typographic mode always
+ * renders something (it falls back to the title), image mode only once an
+ * image is actually set. */
 export function hasCover(idea: Idea): boolean {
-  return !!(idea.meta?.coverUrl || idea.meta?.cover)
+  if (!idea.meta) return false
+  return idea.meta.coverMode === 'image' ? !!(idea.meta.coverUrl || idea.meta.cover) : true
 }

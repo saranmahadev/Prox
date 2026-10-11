@@ -1,5 +1,6 @@
 import type { OutputData } from '@editorjs/editorjs'
 import { stripHtml } from '../../../lib/editorjsBlocks'
+import { useIdeasStore } from '../../../state/useIdeasStore'
 import type { Idea } from '../../../types/idea'
 
 interface ImageNode {
@@ -21,6 +22,8 @@ interface ImageCheckSectionProps {
 
 export function ImageCheckSection({ idea, onFixInDraft }: ImageCheckSectionProps) {
   const images = collectImages(idea.draft)
+  const updateMeta = useIdeasStore((s) => s.updateMeta)
+  const allowImages = idea.meta?.allowImages ?? false
 
   return (
     <section className="rs-sec">
@@ -28,24 +31,39 @@ export function ImageCheckSection({ idea, onFixInDraft }: ImageCheckSectionProps
         Image check <span className="rs-count">{images.length}</span>
       </h5>
       {images.length ? (
-        <ul className="rs-list">
-          {images.map((img, i) => {
-            const ok = img.alt.trim()
-            return (
-              <li className="rs-row" key={i}>
-                <span className="rs-ico">{ok ? '✓' : '⚠️'}</span>
-                <div className="rs-main">
-                  <div className="rs-t">{ok || 'Image without caption / alt text'}</div>
-                </div>
-                {!ok && (
-                  <button className="btn" type="button" onClick={onFixInDraft}>
-                    Fix in Draft
-                  </button>
-                )}
-              </li>
-            )
-          })}
-        </ul>
+        <>
+          <p className="rs-hint">
+            Blog's posts use no images by policy - this is the rare, explicit exception. Publishing will set{' '}
+            <code>allowImages: true</code> in frontmatter and commit each image to <code>public/articles/&lt;slug&gt;/</code>.
+          </p>
+          <ul className="rs-list">
+            {images.map((img, i) => {
+              const ok = img.alt.trim()
+              return (
+                <li className="rs-row" key={i}>
+                  <span className="rs-ico">{ok ? '✓' : '⚠️'}</span>
+                  <div className="rs-main">
+                    <div className="rs-t">{ok || 'Image without caption / alt text'}</div>
+                  </div>
+                  {!ok && (
+                    <button className="btn" type="button" onClick={onFixInDraft}>
+                      Fix in Draft
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          <label className="mrow" style={{ alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={allowImages}
+              onChange={(e) => updateMeta(idea.id, { allowImages: e.target.checked })}
+            />
+            Publish with these images anyway
+          </label>
+          {!allowImages && <p className="rs-hint">Leave this unchecked and publishing will fail until it's confirmed.</p>}
+        </>
       ) : (
         <p className="rs-empty">No images in the article yet.</p>
       )}

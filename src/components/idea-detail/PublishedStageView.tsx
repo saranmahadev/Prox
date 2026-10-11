@@ -8,6 +8,9 @@ import { readMins } from '../../lib/articleMeta'
 import { headingRows, numberingFor } from '../../lib/headings'
 import { wordCount, hasCover } from '../../lib/text'
 import { useCoverUrl } from '../../hooks/useCoverUrl'
+import { renderCoverHtml } from '../../lib/imaxtRender'
+import { getPrStatus } from '../../lib/githubPublish'
+import { useIdeasStore } from '../../state/useIdeasStore'
 import { SourceRow } from './research/SourceRow'
 import { InsightRow } from './research/InsightRow'
 import { QuestionRow } from './research/QuestionRow'
@@ -111,6 +114,41 @@ function GenericRecap({ idea, pipeline }: PublishedStageViewProps) {
 /** Article recap: rendered body, TOC, and Idea/Research/Outline/Metadata/
  * Distribution sections. Ported from legacy's publishedHTML() article
  * branch (lines 1266-1289). */
+function PrStatusBanner({ idea }: { idea: Idea }) {
+  const updateMeta = useIdeasStore((s) => s.updateMeta)
+  const [checking, setChecking] = useState(false)
+  const pr = idea.meta?.publishedPr
+  if (!pr) return null
+
+  async function handleCheck() {
+    setChecking(true)
+    try {
+      const status = await getPrStatus(pr!.number)
+      updateMeta(idea.id, { publishedPr: { number: pr!.number, url: pr!.url, branch: pr!.branch, merged: status.merged } })
+    } catch {
+      /* leave last-known status in place */
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  return (
+    <div className="pub-pr-banner">
+      <span>
+        {pr.merged ? '✓ Merged' : '◐ Open'} ·{' '}
+        <a href={pr.url} target="_blank" rel="noopener noreferrer">
+          PR #{pr.number} on blog
+        </a>
+      </span>
+      {!pr.merged && (
+        <button className="btn" type="button" disabled={checking} onClick={handleCheck}>
+          {checking ? 'Checking…' : 'Check status'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 function ArticleRecap({ idea }: { idea: Idea }) {
   const coverUrl = useCoverUrl(idea)
   const words = wordCount(idea.draft)
@@ -150,6 +188,7 @@ function ArticleRecap({ idea }: { idea: Idea }) {
 
   return (
     <>
+      <PrStatusBanner idea={idea} />
       <nav className="pub-toc" aria-label="Sections">
         {toc.map(([id, label]) => (
           <a
@@ -167,9 +206,7 @@ function ArticleRecap({ idea }: { idea: Idea }) {
 
       <article className="ed-preview pub-article" id="pub-article">
         {hasCover(idea) && (
-          <div className="pub-cover">
-            <img src={coverUrl} alt={idea.meta?.coverAlt ?? ''} />
-          </div>
+          <div className="pub-cover" dangerouslySetInnerHTML={{ __html: renderCoverHtml(idea.meta, idea.title, coverUrl) }} />
         )}
         <h1 className="pub-h">{idea.title}</h1>
         {idea.summary && <p className="pub-sub">{idea.summary}</p>}

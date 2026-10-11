@@ -1,5 +1,22 @@
 /* Published-stage article recap styles, ported from legacy/index.html. */
 
+.pub-pr-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 10px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  background: var(--surface2);
+  font-size: 0.88rem;
+}
+.pub-pr-banner a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .pub-toc {
   display: flex;
   flex-wrap: wrap;

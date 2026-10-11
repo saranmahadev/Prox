@@ -401,3 +401,16 @@
   overflow: auto;
   padding: 16px 20px 40px;
 }
+.ed-mdx-preview {
+  margin: 16px 20px 40px;
+  padding: 16px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: var(--mono, monospace);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+}

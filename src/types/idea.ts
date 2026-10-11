@@ -76,6 +76,15 @@ export interface Distribution {
   repurpose: string[]
 }
 
+/** Blog's typographic cover (Imaxt): a giant word, number, quote or
+ * stacked title set in the post's series colour - the site's default
+ * cover style. Mirrors Blog's `imaxtCover` frontmatter schema exactly. */
+export interface TypographicCover {
+  kind: 'word' | 'stat' | 'quote' | 'stack'
+  text: string
+  sub: string
+}
+
 export interface ArticleMeta {
   seriesId: string | null
   part: number | null
@@ -88,9 +97,18 @@ export interface ArticleMeta {
   canonical: string
   category: string
   publishAt: string
+  /** Which cover this article publishes with. 'typographic' is Blog's
+   * convention; 'image' is schema-legal but off-convention there. */
+  coverMode: 'typographic' | 'image'
+  typographicCover: TypographicCover
   coverUrl: string
   coverAlt: string
   cover: { key: string } | null
+  /** Blog's posts use no images by policy - this is the explicit, rare
+   * opt-in (matches its `allowImages` frontmatter flag exactly). Leaving
+   * it false while the draft has image blocks blocks publishing. */
+  allowImages: boolean
+  publishedPr: PublishedPr | null
 }
 
 export interface Idea {
@@ -117,8 +135,27 @@ export interface Idea {
   dist: Distribution | null // article pipeline only
 }
 
+/** Matches Blog's series `index.md` frontmatter exactly - tone/pattern are
+ * optional there too (a stable choice is derived from the slug when unset),
+ * so null means "no override" rather than "unset = error". */
 export interface Series {
   id: string
   name: string
   desc: string
+  /** Blog's folder name: src/content/series/<slug>/. Stable once published -
+   * changing it after the series has live posts moves the whole folder. */
+  slug: string
+  tone: 'mint' | 'lilac' | 'sky' | 'rose' | null
+  pattern: 'dots' | 'rings' | 'grid' | 'stripes' | 'check' | null
+  /** True once this series' index.md has been committed at least once -
+   * later publishes of its other members skip re-committing it. */
+  publishedToBlog: boolean
+}
+
+/** Where a publish landed - a real GitHub PR, not a local status flag. */
+export interface PublishedPr {
+  number: number
+  url: string
+  branch: string
+  merged: boolean
 }
