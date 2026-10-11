@@ -19,11 +19,12 @@ import { hydrateImaxtBlocks } from '../../lib/imaxtRender'
 import { fileStore } from '../../lib/fileStore'
 import { uid } from '../../lib/id'
 import { docToMarkdown } from '../../lib/markdown'
+import { compileArticleToMdx } from '../../lib/imaxtCompile'
 import { readMins } from '../../lib/articleMeta'
 import { wordCount } from '../../lib/text'
 import { useIdeasStore } from '../../state/useIdeasStore'
 import { useUiStore } from '../../state/useUiStore'
-import { AutoGrowTextarea } from '../ui'
+import { AutoGrowTextarea, Modal } from '../ui'
 import type { Idea } from '../../types/idea'
 
 const EMPTY_DOC: OutputData = { blocks: [] }
@@ -63,6 +64,9 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
 
   const [preview, setPreview] = useState(false)
   const [previewHtml, setPreviewHtml] = useState('')
+  const [mdxOpen, setMdxOpen] = useState(false)
+  const [mdxText, setMdxText] = useState('')
+  const [mdxError, setMdxError] = useState('')
   const [words, setWords] = useState(wordCount(initialDoc))
   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved')
   const [outlineOpen, setOutlineOpen] = useState(false)
@@ -210,6 +214,31 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
     }
   }
 
+  async function handlePreviewMdx() {
+    if (editorRef.current) {
+      const out = await editorRef.current.save()
+      latestDocRef.current = out
+    }
+    try {
+      const { mdx } = compileArticleToMdx({ ...idea, draft: latestDocRef.current })
+      setMdxText(mdx)
+      setMdxError('')
+    } catch (err) {
+      setMdxText('')
+      setMdxError(err instanceof Error ? err.message : 'Could not compile this draft to MDX.')
+    }
+    setMdxOpen(true)
+  }
+
+  async function handleCopyMdx() {
+    try {
+      await navigator.clipboard.writeText(mdxText)
+      showToast('MDX copied')
+    } catch {
+      showToast('Could not copy. Select the text below instead.')
+    }
+  }
+
   async function handleTogglePreview() {
     const next = !preview
     if (next && editorRef.current) {
@@ -245,6 +274,11 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
         <button className="btn" type="button" onClick={handleCopyMarkdown}>
           Copy Markdown
         </button>
+        {idea.meta && (
+          <button className="btn" type="button" onClick={handlePreviewMdx}>
+            Preview MDX
+          </button>
+        )}
         <button className="btn" type="button" onClick={toggleFocusMode}>
           ⤢ Focus
         </button>
@@ -290,6 +324,24 @@ function DraftEditor({ idea, initialDoc }: { idea: Idea; initialDoc: OutputData 
           </aside>
         </>
       )}
+      <Modal open={mdxOpen} onClose={() => setMdxOpen(false)} full labelledBy="mdx-preview-h">
+        <div className="ed-outline-head">
+          <h5 id="mdx-preview-h">MDX - as it will publish</h5>
+          <button className="btn" type="button" aria-label="Close MDX preview" onClick={() => setMdxOpen(false)}>
+            ✕
+          </button>
+        </div>
+        {mdxError ? (
+          <p className="rs-empty">{mdxError}</p>
+        ) : (
+          <>
+            <button className="btn" type="button" onClick={handleCopyMdx}>
+              Copy MDX
+            </button>
+            <pre className="ed-mdx-preview">{mdxText}</pre>
+          </>
+        )}
+      </Modal>
     </>
   )
 }
