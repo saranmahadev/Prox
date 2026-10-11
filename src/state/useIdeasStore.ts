@@ -66,6 +66,7 @@ interface IdeasState {
   updateSeriesSlug: (seriesId: string, slug: string) => void
   updateSeriesTone: (seriesId: string, tone: Series['tone']) => void
   updateSeriesPattern: (seriesId: string, pattern: Series['pattern']) => void
+  markSeriesPublished: (seriesId: string) => void
   deleteSeries: (seriesId: string) => void
   setIdeaSeries: (ideaId: string, seriesId: string | null) => void
   setIdeaPart: (ideaId: string, part: number | null) => void
@@ -366,7 +367,7 @@ export const useIdeasStore = create<IdeasState>()(
         let slug = base
         let n = 2
         while (existing.has(slug)) slug = `${base}-${n++}`
-        const series: Series = { id: uid(), name, desc: '', slug, tone: null, pattern: null }
+        const series: Series = { id: uid(), name, desc: '', slug, tone: null, pattern: null, publishedToBlog: false }
         set((s) => ({ series: [...s.series, series] }))
         return series
       },
@@ -389,6 +390,10 @@ export const useIdeasStore = create<IdeasState>()(
 
       updateSeriesPattern: (seriesId, pattern) => {
         set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, pattern } : ser)) }))
+      },
+
+      markSeriesPublished: (seriesId) => {
+        set((s) => ({ series: s.series.map((ser) => (ser.id === seriesId ? { ...ser, publishedToBlog: true } : ser)) }))
       },
 
       deleteSeries: (seriesId) => {
@@ -503,18 +508,18 @@ export const useIdeasStore = create<IdeasState>()(
         if (version < 3 && state?.series) {
           const seen = new Set<string>()
           state.series = state.series.map((ser) => {
-            type LegacySeries = Series & { slug?: string; tone?: Series['tone']; pattern?: Series['pattern'] }
+            type LegacySeries = Series & { slug?: string; tone?: Series['tone']; pattern?: Series['pattern']; publishedToBlog?: boolean }
             const legacy = ser as LegacySeries
             if (legacy.slug) {
               seen.add(legacy.slug)
-              return ser
+              return { ...ser, publishedToBlog: legacy.publishedToBlog ?? false }
             }
             const base = slugify(ser.name) || 'series'
             let slug = base
             let n = 2
             while (seen.has(slug)) slug = `${base}-${n++}`
             seen.add(slug)
-            return { ...ser, slug, tone: legacy.tone ?? null, pattern: legacy.pattern ?? null }
+            return { ...ser, slug, tone: legacy.tone ?? null, pattern: legacy.pattern ?? null, publishedToBlog: false }
           })
         }
         return state as IdeasState

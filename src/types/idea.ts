@@ -108,6 +108,7 @@ export interface ArticleMeta {
    * opt-in (matches its `allowImages` frontmatter flag exactly). Leaving
    * it false while the draft has image blocks blocks publishing. */
   allowImages: boolean
+  publishedPr: PublishedPr | null
 }
 
 export interface Idea {
@@ -146,4 +147,15 @@ export interface Series {
   slug: string
   tone: 'mint' | 'lilac' | 'sky' | 'rose' | null
   pattern: 'dots' | 'rings' | 'grid' | 'stripes' | 'check' | null
+  /** True once this series' index.md has been committed at least once -
+   * later publishes of its other members skip re-committing it. */
+  publishedToBlog: boolean
+}
+
+/** Where a publish landed - a real GitHub PR, not a local status flag. */
+export interface PublishedPr {
+  number: number
+  url: string
+  branch: string
+  merged: boolean
 }

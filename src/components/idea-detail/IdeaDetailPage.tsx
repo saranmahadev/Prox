@@ -17,6 +17,7 @@ import { DraftEditorView } from './DraftEditorView'
 import { OutlineEditorView } from './OutlineEditorView'
 import { MetaBuilderView } from './MetaBuilderView'
 import { DistributeView } from './DistributeView'
+import { publishArticle, PublishBlockedError } from '../../lib/publishArticle'
 
 interface IdeaDetailPageProps {
   drawer: DrawerState | null
@@ -30,6 +31,7 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
   const focusMode = useUiStore((s) => s.focusMode)
 
   const ideas = useIdeasStore((s) => s.ideas)
+  const series = useIdeasStore((s) => s.series)
   const setChecklistItem = useIdeasStore((s) => s.setChecklistItem)
   const advanceStage = useIdeasStore((s) => s.advanceStage)
   const goBackStage = useIdeasStore((s) => s.goBackStage)
@@ -37,6 +39,9 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
   const archiveIdea = useIdeasStore((s) => s.archiveIdea)
   const restoreIdea = useIdeasStore((s) => s.restoreIdea)
   const deleteIdea = useIdeasStore((s) => s.deleteIdea)
+  const updateMeta = useIdeasStore((s) => s.updateMeta)
+  const markSeriesPublished = useIdeasStore((s) => s.markSeriesPublished)
+  const [publishing, setPublishing] = useState(false)
 
   const open = drawer !== null
 
@@ -76,12 +81,31 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
   const done = isDone(idea)
   const showSummaryMeta = stage.id !== 'capture'
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const fromStage = stageOf(idea)
     const openQuestions =
       fromStage.id === 'research' ? idea.research.questions.filter((q) => q.status !== 'answered').length : 0
     const newStageIndex = idea.stage + 1
     const nowDone = newStageIndex >= pipeline.stages.length - 1
+
+    if (nowDone && idea.type === 'article') {
+      setPublishing(true)
+      try {
+        const currentSeries = series.find((s) => s.id === idea.meta?.seriesId) ?? null
+        const { pr, seriesPublished } = await publishArticle(idea, currentSeries)
+        updateMeta(idea.id, { publishedPr: pr })
+        if (currentSeries && seriesPublished) markSeriesPublished(currentSeries.id)
+        advanceStage(idea.id)
+        showToast(`🚀 PR #${pr.number} opened on blog`)
+      } catch (err) {
+        const message = err instanceof PublishBlockedError ? err.message : err instanceof Error ? err.message : 'Publish failed'
+        showToast(`⚠️ ${message}`)
+      } finally {
+        setPublishing(false)
+      }
+      return
+    }
+
     advanceStage(idea.id)
     if (nowDone) {
       showToast(`🚀 "${idea.title}" published!`)
@@ -205,12 +229,14 @@ export function IdeaDetailPage({ drawer, onEdit }: IdeaDetailPageProps) {
                 </button>
               )
             ) : (
-              <button className="btn primary" onClick={handleNext}>
-                {stageIndex === pipeline.stages.length - 2
-                  ? 'Complete & publish 🚀'
-                  : stageIndex === 0
-                    ? 'Start research →'
-                    : 'Complete & advance →'}
+              <button className="btn primary" disabled={publishing} onClick={handleNext}>
+                {publishing
+                  ? 'Publishing…'
+                  : stageIndex === pipeline.stages.length - 2
+                    ? 'Complete & publish 🚀'
+                    : stageIndex === 0
+                      ? 'Start research →'
+                      : 'Complete & advance →'}
               </button>
             )}
           </div>
